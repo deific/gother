@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"gother/internal/constant"
 	"time"
 )
@@ -40,5 +41,7 @@ func NewBlock(height int64, preHash, data []byte) *Block {
 // GenesisBlock 创世区块，每个区块都有上一个区块的hash,对于第一个创世区块,上一个区块hash为空
 func GenesisBlock() *Block {
 	genesisWords := "Hello, gother!"
-	return NewBlock(0, []byte{}, []byte(genesisWords))
+	var preHash = make([]byte, 8)
+	binary.BigEndian.PutUint64(preHash, 1)
+	return NewBlock(0, preHash, []byte(genesisWords))
 }
