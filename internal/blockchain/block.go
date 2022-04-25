@@ -56,6 +56,6 @@ func NewBlock(height int64, preHash []byte, transactions []*transaction.Transact
 // GenesisBlock 创世区块，每个区块都有上一个区块的hash,对于第一个创世区块,上一个区块hash为空
 func GenesisBlock() *Block {
 	var preHash = make([]byte, 8)
-	binary.BigEndian.PutUint64(preHash, 1)
-	return NewBlock(0, preHash, []*transaction.Transaction{transaction.BaseTx([]byte("Hi,Gother"))})
+	binary.BigEndian.PutUint64(preHash, 0)
+	return NewBlock(0, preHash, []*transaction.Transaction{transaction.BaseTransaction([]byte(constant.BaseAddress))})
 }

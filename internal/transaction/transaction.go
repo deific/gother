@@ -36,8 +36,8 @@ func (tx *Transaction) IsBase() bool {
 	return len(tx.Inputs) == 1 && tx.Inputs[0].OutIdx == -1
 }
 
-// BaseTx 创世区块的交易，同时也是会记录因为打包成功，产生奖励给矿工的交易
-func BaseTx(toAddress []byte) *Transaction {
+// BaseTransaction 创世区块的交易，同时也是会记录因为打包成功，产生奖励给矿工的交易
+func BaseTransaction(toAddress []byte) *Transaction {
 	txIn := TxInput{[]byte{}, -1, []byte{}}
 	txOut := TxOutput{constant.InitCoin, toAddress}
 	tx := Transaction{[]byte("This is the Base Transaction!"), []TxInput{txIn}, []TxOutput{txOut}}
