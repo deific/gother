@@ -25,7 +25,7 @@ func (b *Block) GetDataWithNonce(nonce int64) []byte {
 		b.PreHash,
 		utils.ToHexForInt(nonce),
 		b.Target,
-		b.Data,
+		b.GetTransactionSummary(),
 	}, []byte{})
 	return data
 }
