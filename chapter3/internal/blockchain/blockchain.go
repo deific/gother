@@ -3,8 +3,8 @@ package blockchain
 import (
 	"encoding/hex"
 	"fmt"
-	"gother/internal/transaction"
-	"gother/internal/utils"
+	transaction2 "gother/chapter3/internal/transaction"
+	"gother/chapter3/internal/utils"
 )
 
 type Blockchain struct {
@@ -12,7 +12,7 @@ type Blockchain struct {
 }
 
 // AddBlock 向区块链上追加区块
-func (c *Blockchain) AddBlock(transactions []*transaction.Transaction) {
+func (c *Blockchain) AddBlock(transactions []*transaction2.Transaction) {
 	height := len(c.Blocks)
 	newBlock := NewBlock(int64(height), c.Blocks[height-1].Hash, transactions)
 	c.Blocks = append(c.Blocks, newBlock)
@@ -26,19 +26,19 @@ func CreateBlockChain() *Blockchain {
 }
 
 // Mine 模拟挖矿
-func (bc *Blockchain) Mine(txs []*transaction.Transaction) {
+func (bc *Blockchain) Mine(txs []*transaction2.Transaction) {
 	bc.AddBlock(txs)
 }
 
 // CreateTransaction 创建交易
-func (bc *Blockchain) CreateTransaction(fromAddress []byte, toAddress []byte, amount int) (*transaction.Transaction, bool) {
-	var inputs []transaction.TxInput
-	var outputs []transaction.TxOutput
+func (bc *Blockchain) CreateTransaction(fromAddress []byte, toAddress []byte, amount int) (*transaction2.Transaction, bool) {
+	var inputs []transaction2.TxInput
+	var outputs []transaction2.TxOutput
 	// 根据输入地址找出该地址的未花费输出
 	balance, vaildOutputs := bc.FindSpendableOutputs(fromAddress, amount)
 	if balance < amount {
 		fmt.Println("Not enough coins!")
-		return &transaction.Transaction{}, false
+		return &transaction2.Transaction{}, false
 	}
 
 	// 根据未花费输出，构建新交易的输入信息
@@ -46,18 +46,18 @@ func (bc *Blockchain) CreateTransaction(fromAddress []byte, toAddress []byte, am
 		txID, err := hex.DecodeString(txId)
 		utils.Handle(err)
 
-		input := transaction.TxInput{TxID: txID, OutIdx: outIdx, FromAddress: fromAddress}
+		input := transaction2.TxInput{TxID: txID, OutIdx: outIdx, FromAddress: fromAddress}
 		inputs = append(inputs, input)
 	}
 
 	// 构建输出信息
-	outputs = append(outputs, transaction.TxOutput{ToAddress: toAddress, Value: amount})
+	outputs = append(outputs, transaction2.TxOutput{ToAddress: toAddress, Value: amount})
 	// 如果可花费金额超出了amount,需要找零
 	if balance > amount {
-		outputs = append(outputs, transaction.TxOutput{ToAddress: fromAddress, Value: balance - amount})
+		outputs = append(outputs, transaction2.TxOutput{ToAddress: fromAddress, Value: balance - amount})
 	}
 
-	tx := transaction.Transaction{Inputs: inputs, Outputs: outputs}
+	tx := transaction2.Transaction{Inputs: inputs, Outputs: outputs}
 	tx.SetID()
 	return &tx, true
 }
@@ -107,8 +107,8 @@ Work:
 }
 
 // FindUnspentTx 查找所有包含address未花费交易
-func (bc *Blockchain) FindUnspentTx(address []byte) []transaction.Transaction {
-	var unSpentTx []transaction.Transaction
+func (bc *Blockchain) FindUnspentTx(address []byte) []transaction2.Transaction {
+	var unSpentTx []transaction2.Transaction
 	spentTxs := make(map[string][]int)
 
 	// 循环查找整个区块链，从后向前查找

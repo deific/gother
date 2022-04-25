@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
-	"gother/internal/blockchain"
-	"gother/internal/constant"
-	"gother/internal/transaction"
+	"gother/chapter3/internal/blockchain"
+	"gother/chapter3/internal/constant"
+	"gother/chapter3/internal/transaction"
 )
 
 func main() {

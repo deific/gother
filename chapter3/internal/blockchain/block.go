@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
-	"gother/internal/constant"
-	"gother/internal/transaction"
+	"gother/chapter3/internal/constant"
+	"gother/chapter3/internal/transaction"
 	"time"
 )
 

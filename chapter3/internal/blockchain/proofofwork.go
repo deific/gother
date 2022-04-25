@@ -3,7 +3,7 @@ package blockchain
 import (
 	"bytes"
 	"crypto/sha256"
-	"gother/internal/utils"
+	"gother/chapter3/internal/utils"
 	"math"
 	"math/big"
 )
