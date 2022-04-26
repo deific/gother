@@ -3,8 +3,8 @@ package blockchain
 import (
 	"encoding/hex"
 	"fmt"
-	transaction2 "gother/chapter3/internal/transaction"
-	"gother/chapter3/internal/utils"
+	transaction2 "gother/chapter4/internal/transaction"
+	"gother/chapter4/internal/utils"
 )
 
 type Blockchain struct {

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/gob"
-	"gother/chapter3/internal/constant"
-	"gother/chapter3/internal/utils"
+	"gother/chapter4/internal/constant"
+	"gother/chapter4/internal/utils"
 )
 
 type Transaction struct {
