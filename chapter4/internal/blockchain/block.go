@@ -3,9 +3,10 @@ package blockchain
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/binary"
+	"encoding/gob"
 	"gother/chapter4/internal/constant"
 	"gother/chapter4/internal/transaction"
+	"gother/chapter4/internal/utils"
 	"time"
 )
 
@@ -26,7 +27,6 @@ func (b *Block) GetTransactionSummary() []byte {
 	for _, tx := range b.Transactions {
 		txIDs = append(txIDs, tx.ID)
 	}
-
 	summary := bytes.Join(txIDs, []byte{})
 	return summary
 }
@@ -38,6 +38,23 @@ func (b *Block) SetHash() {
 	hash := sha256.Sum256(data)
 	// 通过切片操作转换为切片赋值给Block
 	b.Hash = hash[:]
+}
+
+func (b *Block) Serialize() []byte {
+	var res bytes.Buffer
+	encoder := gob.NewEncoder(&res)
+	err := encoder.Encode(b)
+	utils.Handle(err)
+
+	return res.Bytes()
+}
+
+func DeSerialize(data []byte) *Block {
+	var block Block
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	err := decoder.Decode(&block)
+	utils.Handle(err)
+	return &block
 }
 
 func NewBlock(height int64, preHash []byte, transactions []*transaction.Transaction) *Block {
@@ -54,8 +71,9 @@ func NewBlock(height int64, preHash []byte, transactions []*transaction.Transact
 }
 
 // GenesisBlock 创世区块，每个区块都有上一个区块的hash,对于第一个创世区块,上一个区块hash为空
-func GenesisBlock() *Block {
-	var preHash = make([]byte, 8)
-	binary.BigEndian.PutUint64(preHash, 0)
-	return NewBlock(0, preHash, []*transaction.Transaction{transaction.BaseTransaction([]byte(constant.BaseAddress))})
+func GenesisBlock(address []byte) *Block {
+	tx := transaction.BaseTransaction(address)
+	genesis := NewBlock(0, []byte(constant.GenesisPreHash), []*transaction.Transaction{tx})
+	genesis.SetHash()
+	return genesis
 }

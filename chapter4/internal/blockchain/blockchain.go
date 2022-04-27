@@ -1,33 +1,160 @@
 package blockchain
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/dgraph-io/badger"
+	"gother/chapter4/internal/constant"
 	transaction2 "gother/chapter4/internal/transaction"
 	"gother/chapter4/internal/utils"
+	"runtime"
 )
 
 type Blockchain struct {
-	Blocks []*Block
+	//Blocks   []*Block
+	LastHash []byte
+	Database *badger.DB
 }
 
-// AddBlock 向区块链上追加区块
-func (c *Blockchain) AddBlock(transactions []*transaction2.Transaction) {
-	height := len(c.Blocks)
-	newBlock := NewBlock(int64(height), c.Blocks[height-1].Hash, transactions)
-	c.Blocks = append(c.Blocks, newBlock)
+type BlockchainIterator struct {
+	CurrentHash []byte
+	Database    *badger.DB
 }
 
-// CreateBlockChain 创建blockchain
-func CreateBlockChain() *Blockchain {
-	blockChain := &Blockchain{}
-	blockChain.Blocks = append(blockChain.Blocks, GenesisBlock())
-	return blockChain
+func InitBlockChain(address []byte) *Blockchain {
+	var lastHash []byte
+
+	if utils.FileExists(constant.BCFile) {
+		fmt.Println("blockchain already exists")
+		runtime.Goexit()
+	}
+
+	opts := badger.DefaultOptions(constant.BCPath)
+	opts.Logger = nil
+
+	db, err := badger.Open(opts)
+	utils.Handle(err)
+
+	err = db.Update(func(txn *badger.Txn) error {
+		genesis := GenesisBlock(address)
+		fmt.Println("Genesis Created")
+		err = txn.Set(genesis.Hash, genesis.Serialize())
+		utils.Handle(err)
+
+		err = txn.Set([]byte("lh"), genesis.Hash)
+		utils.Handle(err)
+
+		err = txn.Set([]byte("ogprevhash"), genesis.PreHash)
+		utils.Handle(err)
+
+		lastHash = genesis.Hash
+		return err
+	})
+	utils.Handle(err)
+
+	blockchain := Blockchain{lastHash, db}
+	return &blockchain
+}
+
+// LoadBlockChain 加载区块链
+func LoadBlockChain() *Blockchain {
+	if !utils.FileExists(constant.BCFile) {
+		fmt.Println("No blockchain found,please create one first")
+		runtime.Goexit()
+	}
+
+	var lastHash []byte
+
+	opts := badger.DefaultOptions(constant.BCPath)
+	opts.Logger = nil
+
+	db, err := badger.Open(opts)
+	utils.Handle(err)
+
+	err = db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte("lh"))
+		utils.Handle(err)
+
+		err = item.Value(func(val []byte) error {
+			lastHash = val
+			return nil
+		})
+		utils.Handle(err)
+		return nil
+	})
+	utils.Handle(err)
+
+	chain := Blockchain{lastHash, db}
+	return &chain
+}
+
+func (bc *Blockchain) AddBlock(newBlock *Block) {
+	var lastHash []byte
+
+	// 查询数据库中最后一个区块hash
+	err := bc.Database.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte("lh"))
+		utils.Handle(err)
+		err = item.Value(func(val []byte) error {
+			lastHash = val
+			return nil
+		})
+		utils.Handle(err)
+		return err
+	})
+	utils.Handle(err)
+
+	// 判断引用关系
+	if !bytes.Equal(newBlock.PreHash, lastHash) {
+		fmt.Println("This block is out of age")
+		runtime.Goexit()
+	}
+
+	// 保存新区块
+	err = bc.Database.Update(func(txn *badger.Txn) error {
+		err := txn.Set(newBlock.Hash, newBlock.Serialize())
+		utils.Handle(err)
+
+		err = txn.Set([]byte("lh"), newBlock.Hash)
+		bc.LastHash = newBlock.Hash
+		return err
+	})
+	utils.Handle(err)
+}
+
+func (bc *Blockchain) Iterator() *BlockchainIterator {
+	it := BlockchainIterator{CurrentHash: bc.LastHash, Database: bc.Database}
+	return &it
+}
+
+func (it *BlockchainIterator) Next() *Block {
+	var block *Block
+
+	err := it.Database.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(it.CurrentHash)
+		utils.Handle(err)
+
+		err = item.Value(func(val []byte) error {
+			block = DeSerialize(val)
+			return nil
+		})
+		utils.Handle(err)
+		return nil
+	})
+	utils.Handle(err)
+
+	it.CurrentHash = block.PreHash
+	return block
+}
+
+// HasNext 是否还有下一个区块
+func (it *BlockchainIterator) HasNext() bool {
+	return !bytes.Equal(it.CurrentHash, []byte(constant.GenesisPreHash))
 }
 
 // Mine 模拟挖矿
 func (bc *Blockchain) Mine(txs []*transaction2.Transaction) {
-	bc.AddBlock(txs)
 }
 
 // CreateTransaction 创建交易
@@ -112,8 +239,10 @@ func (bc *Blockchain) FindUnspentTx(address []byte) []transaction2.Transaction {
 	spentTxs := make(map[string][]int)
 
 	// 循环查找整个区块链，从后向前查找
-	for idx := len(bc.Blocks) - 1; idx >= 0; idx-- {
-		block := bc.Blocks[idx]
+	iter := bc.Iterator()
+
+	for {
+		block := iter.Next()
 		// 查找每个区块上的交易
 		for _, tx := range block.Transactions {
 			txID := hex.EncodeToString(tx.ID)
@@ -143,6 +272,10 @@ func (bc *Blockchain) FindUnspentTx(address []byte) []transaction2.Transaction {
 					}
 				}
 			}
+		}
+
+		if !iter.HasNext() {
+			break
 		}
 	}
 
