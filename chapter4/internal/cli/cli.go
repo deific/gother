@@ -19,10 +19,14 @@ func (cl *CommandLine) Run() {
 	createCmd := flag.NewFlagSet("create", flag.ExitOnError)
 	balanceCmd := flag.NewFlagSet("balance", flag.ExitOnError)
 	infoCmd := flag.NewFlagSet("info", flag.ExitOnError)
+	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
+	mineCmd := flag.NewFlagSet("mine", flag.ExitOnError)
 
 	createCmdAddress := createCmd.String("address", "", "The address refer to the owner of blockchain")
 	balanceAddress := balanceCmd.String("address", "", "Who need to get balance amount")
-
+	sendFromAddres := sendCmd.String("from", "", "Source address")
+	sendToAddress := sendCmd.String("to", "", "Destination address")
+	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
 	switch os.Args[1] {
 	case "create":
 		err := createCmd.Parse(os.Args[2:])
@@ -32,6 +36,12 @@ func (cl *CommandLine) Run() {
 		utils.Handle(err)
 	case "info":
 		err := infoCmd.Parse(os.Args[2:])
+		utils.Handle(err)
+	case "send":
+		err := sendCmd.Parse(os.Args[2:])
+		utils.Handle(err)
+	case "mine":
+		err := mineCmd.Parse(os.Args[2:])
 		utils.Handle(err)
 	}
 
@@ -53,6 +63,14 @@ func (cl *CommandLine) Run() {
 
 	if infoCmd.Parsed() {
 		cl.info()
+	}
+
+	if sendCmd.Parsed() {
+		cl.send(*sendFromAddres, *sendToAddress, *sendAmount)
+	}
+
+	if mineCmd.Parsed() {
+		cl.mine()
 	}
 }
 func (cl *CommandLine) checkArgs() {
@@ -87,6 +105,28 @@ func (cl *CommandLine) balance(address string) {
 	balance, _ := chain.FindUTXOs([]byte(address))
 
 	fmt.Printf("Address: %s, Balance: %d \n", address, balance)
+}
+
+func (cl *CommandLine) send(fromAddress string, toAddress string, amount int) {
+	chain := blockchain.LoadBlockChain()
+	defer chain.Database.Close()
+	tx, ok := chain.CreateTransaction([]byte(fromAddress), []byte(toAddress), amount)
+	if !ok {
+		fmt.Println("Failed to create transaction")
+		return
+	}
+
+	txPool := blockchain.CreateTransactionPool()
+	txPool.AddTransaction(tx)
+	txPool.SaveFile()
+	fmt.Println("Success")
+}
+
+func (cl *CommandLine) mine() {
+	chain := blockchain.LoadBlockChain()
+	defer chain.Database.Close()
+	chain.RunMine()
+	fmt.Println("Finished mine")
 }
 
 func (cl *CommandLine) info() {
