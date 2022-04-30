@@ -20,25 +20,35 @@ func (cl *CommandLine) Run() {
 	cl.parseAndRunCmd("createwallet", map[string]string{"refname": "The refname of the wallet, and this is optimal"}, func(args map[string]*string) {
 		cl.createWallet(*args["refname"])
 	})
-	cl.parseAndRunCmd("walletinfo", map[string]string{"refname": "The refname of the wallet"}, func(args map[string]*string) {
-		cl.walletInfoByRefName(*args["refname"])
+	cl.parseAndRunCmd("walletinfo", map[string]string{"refname": "The refname of the wallet", "address": "The address of the wallet"}, func(args map[string]*string) {
+		if *args["refname"] != "" {
+			cl.walletInfoByRefName(*args["refname"])
+		} else {
+			cl.walletInfo(*args["address"])
+		}
 	})
-	cl.parseAndRunCmd("walletinfo", map[string]string{"address": "The address of the wallet"}, func(args map[string]*string) {
-		cl.walletInfo(*args["address"])
-	})
-
-	cl.parseAndRunCmd("createblockchain", map[string]string{"refname": "The refname refer to the owner of blockchain"}, func(args map[string]*string) {
-		cl.createByRefName(*args["refname"])
-	})
-	cl.parseAndRunCmd("createblockchain", map[string]string{"address": "The address refer to the owner of blockchain"}, func(args map[string]*string) {
-		cl.create(*args["address"])
+	cl.parseAndRunCmd("walletslist", map[string]string{}, func(args map[string]*string) {
+		cl.walletsList()
 	})
 
-	cl.parseAndRunCmd("balance", map[string]string{"refname": "Who need to get balance amount"}, func(args map[string]*string) {
-		cl.balanceByRefName(*args["refname"])
+	cl.parseAndRunCmd("createblockchain", map[string]string{
+		"refname": "The refname refer to the owner of blockchain",
+		"address": "The address refer to the owner of blockchain"}, func(args map[string]*string) {
+		if *args["refname"] != "" {
+			cl.createByRefName(*args["refname"])
+		} else {
+			cl.create(*args["address"])
+		}
 	})
-	cl.parseAndRunCmd("balance", map[string]string{"address": "Who need to get balance amount"}, func(args map[string]*string) {
-		cl.balance(*args["address"])
+
+	cl.parseAndRunCmd("balance", map[string]string{
+		"refname": "Who need to get balance amount",
+		"address": "Who need to get balance amount"}, func(args map[string]*string) {
+		if *args["refname"] != "" {
+			cl.balanceByRefName(*args["refname"])
+		} else {
+			cl.balance(*args["address"])
+		}
 	})
 
 	cl.parseAndRunCmd("blockchaininfo", map[string]string{}, func(args map[string]*string) {
@@ -66,7 +76,7 @@ func (cl *CommandLine) parseAndRunCmd(subCmdName string, args map[string]string,
 		return
 	}
 
-	subCmd := flag.NewFlagSet(subCmdName, flag.ExitOnError)
+	subCmd := flag.NewFlagSet(subCmdName, flag.ContinueOnError)
 	var params = make(map[string]*string)
 	for argName, argUsage := range args {
 		param := subCmd.String(argName, "", argUsage)
@@ -74,7 +84,9 @@ func (cl *CommandLine) parseAndRunCmd(subCmdName string, args map[string]string,
 	}
 
 	err := subCmd.Parse(os.Args[2:])
-	utils.Handle(err)
+	if err != nil {
+		return
+	}
 
 	if subCmd.Parsed() {
 		fmt.Printf("run cmd: %s%v \n", subCmdName, printArgs(params))
@@ -131,6 +143,7 @@ func (cl *CommandLine) createWallet(refName string) *wallet.Wallet {
 	refList := wallet.LoadRefList()
 	refList.BindRef(string(newWallet.Address()), refName)
 	refList.Save()
+	fmt.Printf("Succeed create wallet:%s %s\n", refName, string(newWallet.Address()))
 	return newWallet
 }
 

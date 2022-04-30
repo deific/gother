@@ -78,7 +78,7 @@ func LoadRefList() *RefList {
 		fileContent, err := ioutil.ReadFile(filename)
 		utils.Handle(err)
 		decoder := gob.NewDecoder(bytes.NewReader(fileContent))
-		err = decoder.Decode(refList)
+		err = decoder.Decode(&refList)
 		utils.Handle(err)
 	} else {
 		// 如果不存在在则扫描钱包文件并加载
