@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/gob"
+	"errors"
 	"gother/chapter5/internal/constant"
 	"gother/chapter5/internal/utils"
 	"io/ioutil"
@@ -37,8 +38,20 @@ func (w *Wallet) SaveWallet() {
 	err = ioutil.WriteFile(filename, content.Bytes(), 0644)
 	utils.Handle(err)
 }
-func (w *Wallet) LoadWallet() {
+func LoadWallet(address string) *Wallet {
+	filename := constant.Wallets + address + ".wlt"
+	if !utils.FileExists(filename) {
+		utils.Handle(errors.New("no wallet with such address"))
+	}
+	var w Wallet
+	gob.Register(elliptic.P256())
+	fileContent, err := ioutil.ReadFile(filename)
+	utils.Handle(err)
 
+	decoder := gob.NewDecoder(bytes.NewReader(fileContent))
+	err = decoder.Decode(&w)
+	utils.Handle(err)
+	return &w
 }
 
 // NewPairKey 创建椭圆曲线秘钥对的生成函数
