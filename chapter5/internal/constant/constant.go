@@ -13,5 +13,5 @@ const (
 	CheckSumLength      = 4
 	NetworkVersion      = byte(0x00)
 	Wallets             = "./tmp/wallets/"
-	WalletsRefList      = "./tmp/ref_list"
+	WalletsRefList      = "./tmp/ref_list/"
 )

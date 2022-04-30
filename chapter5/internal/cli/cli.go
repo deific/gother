@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gother/chapter5/internal/blockchain"
 	"gother/chapter5/internal/utils"
+	"gother/chapter5/internal/wallet"
 	"os"
 	"runtime"
 	"strconv"
@@ -16,15 +17,31 @@ type CommandLine struct {
 func (cl *CommandLine) Run() {
 	cl.checkArgs()
 
-	cl.parseAndRunCmd("create", map[string]string{"address": "The address refer to the owner of blockchain"}, func(args map[string]*string) {
+	cl.parseAndRunCmd("createwallet", map[string]string{"refname": "The refname of the wallet, and this is optimal"}, func(args map[string]*string) {
+		cl.createWallet(*args["refname"])
+	})
+	cl.parseAndRunCmd("walletinfo", map[string]string{"refname": "The refname of the wallet"}, func(args map[string]*string) {
+		cl.walletInfoByRefName(*args["refname"])
+	})
+	cl.parseAndRunCmd("walletinfo", map[string]string{"address": "The address of the wallet"}, func(args map[string]*string) {
+		cl.walletInfo(*args["address"])
+	})
+
+	cl.parseAndRunCmd("createblockchain", map[string]string{"refname": "The refname refer to the owner of blockchain"}, func(args map[string]*string) {
+		cl.createByRefName(*args["refname"])
+	})
+	cl.parseAndRunCmd("createblockchain", map[string]string{"address": "The address refer to the owner of blockchain"}, func(args map[string]*string) {
 		cl.create(*args["address"])
 	})
 
+	cl.parseAndRunCmd("balance", map[string]string{"refname": "Who need to get balance amount"}, func(args map[string]*string) {
+		cl.balanceByRefName(*args["refname"])
+	})
 	cl.parseAndRunCmd("balance", map[string]string{"address": "Who need to get balance amount"}, func(args map[string]*string) {
 		cl.balance(*args["address"])
 	})
 
-	cl.parseAndRunCmd("info", map[string]string{}, func(args map[string]*string) {
+	cl.parseAndRunCmd("blockchaininfo", map[string]string{}, func(args map[string]*string) {
 		cl.info()
 	})
 
@@ -32,6 +49,11 @@ func (cl *CommandLine) Run() {
 		amount, err := strconv.Atoi(*args["amount"])
 		utils.Handle(err)
 		cl.send(*args["from"], *args["to"], amount)
+	})
+	cl.parseAndRunCmd("sendbyrefname", map[string]string{"from": "Source address", "to": "Destination address", "amount": "Amount to send"}, func(args map[string]*string) {
+		amount, err := strconv.Atoi(*args["amount"])
+		utils.Handle(err)
+		cl.send(cl.getAddressByRefName(*args["from"]), cl.getAddressByRefName(*args["to"]), amount)
 	})
 
 	cl.parseAndRunCmd("mine", map[string]string{}, func(args map[string]*string) {
@@ -78,16 +100,69 @@ func (cl *CommandLine) checkArgs() {
 }
 func (cl *CommandLine) printUsage() {
 	fmt.Println("Welcome to Leo Cao's tiny blockchain system, usage is as follows:")
-	fmt.Println("--------------------------------------------------------------------------------------------------------------")
-	fmt.Println("All you need is to first create a blockchain and declare the owner.")
-	fmt.Println("And then you can make transactions.")
-	fmt.Println("--------------------------------------------------------------------------------------------------------------")
-	fmt.Println("create -address ADDRESS                   ----> Creates a blockchain with the owner you input")
-	fmt.Println("balance -address ADDRESS                            ----> Back the balance of the address you input")
-	fmt.Println("info                                      ----> Prints the blocks in the chain")
-	fmt.Println("send -from FROADDRESS -to TOADDRESS -amount AMOUNT  ----> Make a transaction and put it into candidate block")
-	fmt.Println("mine                                                ----> Mine and add a block to the chain")
-	fmt.Println("--------------------------------------------------------------------------------------------------------------")
+	fmt.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------")
+	fmt.Println("All you need is to first create a wallet.")
+	fmt.Println("And then you can use the wallet address to create a blockchain and declare the owner.")
+	fmt.Println("Make transactions to expand the blockchain.")
+	fmt.Println("In addition, don't forget to run mine function after transatcions are collected.")
+	fmt.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------")
+	fmt.Println("createwallet -refname REFNAME                       ----> Creates and save a wallet. The refname is optional.")
+	fmt.Println("walletinfo -refname NAME -address Address           ----> Print the information of a wallet. At least one of the refname and address is required.")
+	fmt.Println("walletsupdate                                       ----> Registrate and update all the wallets (especially when you have added an existed .wlt file).")
+	fmt.Println("walletslist                                         ----> List all the wallets found (make sure you have run walletsupdate first).")
+	fmt.Println("createblockchain -refname NAME -address ADDRESS     ----> Creates a blockchain with the owner you input (address or refname).")
+	fmt.Println("balance -refname NAME -address ADDRESS              ----> Back the balance of a wallet using the address (or refname) you input.")
+	fmt.Println("blockchaininfo                                      ----> Prints the blocks in the chain.")
+	fmt.Println("send -from FROADDRESS -to TOADDRESS -amount AMOUNT  ----> Make a transaction and put it into candidate block.")
+	fmt.Println("sendbyrefname -from NAME1 -to NAME2 -amount AMOUNT  ----> Make a transaction and put it into candidate block using refname.")
+	fmt.Println("mine                                                ----> Mine and add a block to the chain.")
+	fmt.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------")
+}
+
+func (cl *CommandLine) getAddressByRefName(refName string) string {
+	refList := wallet.LoadRefList()
+	address, err := refList.FindRef(refName)
+	utils.Handle(err)
+	return address
+}
+func (cl *CommandLine) createWallet(refName string) *wallet.Wallet {
+	newWallet := wallet.NewWallet()
+	newWallet.SaveWallet()
+	refList := wallet.LoadRefList()
+	refList.BindRef(string(newWallet.Address()), refName)
+	refList.Save()
+	return newWallet
+}
+
+func (cl *CommandLine) walletInfoByRefName(refName string) {
+	cl.walletInfo(cl.getAddressByRefName(refName))
+}
+func (cli *CommandLine) walletInfo(address string) {
+	wlt := wallet.LoadWallet(address)
+	refList := wallet.LoadRefList()
+	fmt.Printf("Wallet address:%x\n", wlt.Address())
+	fmt.Printf("Public Key:%x\n", wlt.PublicKey)
+	fmt.Printf("Reference Name:%s\n", (*refList)[address])
+}
+
+func (cli *CommandLine) walletsUpdate() {
+	refList := wallet.LoadRefList()
+	refList.Update()
+	refList.Save()
+	fmt.Println("Succeed in updating wallets.")
+}
+
+func (cli *CommandLine) walletsList() {
+	refList := wallet.LoadRefList()
+	for address, _ := range *refList {
+		wlt := wallet.LoadWallet(address)
+		fmt.Println("--------------------------------------------------------------------------------------------------------------")
+		fmt.Printf("Wallet address:%s\n", address)
+		fmt.Printf("Public Key:%x\n", wlt.PublicKey)
+		fmt.Printf("Reference Name:%s\n", (*refList)[address])
+		fmt.Println("--------------------------------------------------------------------------------------------------------------")
+		fmt.Println()
+	}
 }
 
 func (cl *CommandLine) create(address string) {
@@ -95,13 +170,18 @@ func (cl *CommandLine) create(address string) {
 	newChain.Database.Close()
 	fmt.Println("Finished creating blockchain, and the owner is: ", address)
 }
-
+func (cl *CommandLine) createByRefName(refName string) {
+	cl.create(cl.getAddressByRefName(refName))
+}
 func (cl *CommandLine) balance(address string) {
 	chain := blockchain.LoadBlockChain()
 	defer chain.Database.Close()
 	balance, _ := chain.FindUTXOs([]byte(address))
 
 	fmt.Printf("Address: %s, Balance: %d \n", address, balance)
+}
+func (cl *CommandLine) balanceByRefName(refName string) {
+	cl.balance(cl.getAddressByRefName(refName))
 }
 
 func (cl *CommandLine) send(fromAddress string, toAddress string, amount int) {
@@ -117,6 +197,9 @@ func (cl *CommandLine) send(fromAddress string, toAddress string, amount int) {
 	txPool.AddTransaction(tx)
 	txPool.SaveFile()
 	fmt.Println("Success")
+}
+func (cl *CommandLine) sendByRefName(fromRefName string, toRefName string, amount int) {
+	cl.send(cl.getAddressByRefName(fromRefName), cl.getAddressByRefName(toRefName), amount)
 }
 
 func (cl *CommandLine) mine() {
