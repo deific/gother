@@ -16,63 +16,60 @@ type CommandLine struct {
 func (cl *CommandLine) Run() {
 	cl.checkArgs()
 
-	createCmd := flag.NewFlagSet("create", flag.ExitOnError)
-	balanceCmd := flag.NewFlagSet("balance", flag.ExitOnError)
-	infoCmd := flag.NewFlagSet("info", flag.ExitOnError)
-	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
-	mineCmd := flag.NewFlagSet("mine", flag.ExitOnError)
+	cl.parseAndRunCmd("create", map[string]string{"address": "The address refer to the owner of blockchain"}, func(args map[string]*string) {
+		cl.create(*args["address"])
+	})
 
-	createCmdAddress := createCmd.String("address", "", "The address refer to the owner of blockchain")
-	balanceAddress := balanceCmd.String("address", "", "Who need to get balance amount")
-	sendFromAddres := sendCmd.String("from", "", "Source address")
-	sendToAddress := sendCmd.String("to", "", "Destination address")
-	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
-	switch os.Args[1] {
-	case "create":
-		err := createCmd.Parse(os.Args[2:])
-		utils.Handle(err)
-	case "balance":
-		err := balanceCmd.Parse(os.Args[2:])
-		utils.Handle(err)
-	case "info":
-		err := infoCmd.Parse(os.Args[2:])
-		utils.Handle(err)
-	case "send":
-		err := sendCmd.Parse(os.Args[2:])
-		utils.Handle(err)
-	case "mine":
-		err := mineCmd.Parse(os.Args[2:])
-		utils.Handle(err)
-	}
+	cl.parseAndRunCmd("balance", map[string]string{"address": "Who need to get balance amount"}, func(args map[string]*string) {
+		cl.balance(*args["address"])
+	})
 
-	if createCmd.Parsed() {
-		if *createCmdAddress == "" {
-			createCmd.Usage()
-			runtime.Goexit()
-		}
-		cl.create(*createCmdAddress)
-	}
-
-	if balanceCmd.Parsed() {
-		if *balanceAddress == "" {
-			balanceCmd.Usage()
-			runtime.Goexit()
-		}
-		cl.balance(*balanceAddress)
-	}
-
-	if infoCmd.Parsed() {
+	cl.parseAndRunCmd("info", map[string]string{}, func(args map[string]*string) {
 		cl.info()
-	}
+	})
 
-	if sendCmd.Parsed() {
-		cl.send(*sendFromAddres, *sendToAddress, *sendAmount)
-	}
+	cl.parseAndRunCmd("send", map[string]string{"from": "Source address", "to": "Destination address", "amount": "Amount to send"}, func(args map[string]*string) {
+		amount, err := strconv.Atoi(*args["amount"])
+		utils.Handle(err)
+		cl.send(*args["from"], *args["to"], amount)
+	})
 
-	if mineCmd.Parsed() {
+	cl.parseAndRunCmd("mine", map[string]string{}, func(args map[string]*string) {
 		cl.mine()
-	}
+	})
 }
+
+func (cl *CommandLine) parseAndRunCmd(subCmdName string, args map[string]string, runCmd func(args map[string]*string)) {
+	if subCmdName != os.Args[1] {
+		return
+	}
+
+	subCmd := flag.NewFlagSet(subCmdName, flag.ExitOnError)
+	var params = make(map[string]*string)
+	for argName, argUsage := range args {
+		param := subCmd.String(argName, "", argUsage)
+		params[argName] = param
+	}
+
+	err := subCmd.Parse(os.Args[2:])
+	utils.Handle(err)
+
+	if subCmd.Parsed() {
+		fmt.Printf("run cmd: %s%v \n", subCmdName, printArgs(params))
+		runCmd(params)
+		return
+	}
+	fmt.Printf("run cmd %s error\n", subCmdName)
+}
+
+func printArgs(args map[string]*string) string {
+	var argValues string
+	for key, value := range args {
+		argValues = argValues + " -" + key + " " + *value
+	}
+	return argValues
+}
+
 func (cl *CommandLine) checkArgs() {
 	if len(os.Args) < 2 {
 		cl.printUsage()

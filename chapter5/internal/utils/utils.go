@@ -63,7 +63,7 @@ func Base58Decode(input []byte) []byte {
 }
 
 func PubHash2Address(pubKeyHash []byte) []byte {
-	networkVersionedHash := append([]byte(constant.NetworkVersion), pubKeyHash...)
+	networkVersionedHash := append([]byte{constant.NetworkVersion}, pubKeyHash...)
 	checkSum := CheckSum(networkVersionedHash)
 	finalHash := append(networkVersionedHash, checkSum...)
 	address := Base58Encode(finalHash)
