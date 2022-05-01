@@ -26,3 +26,10 @@ mkdir ./tmp/ref_list
 ./main balance -refname Steven
 ./main balance -refname One
 ./main balance -refname Two
+./main sendbyrefname -from Two -to Steven -amount 90
+./main sendbyrefname -from Two -to One -amount 90
+./main mine
+./main blockchaininfo
+./main balance -refname Steven
+./main balance -refname One
+./main balance -refname Two
