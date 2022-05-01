@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"github.com/dgraph-io/badger"
@@ -158,34 +159,36 @@ func (bc *Blockchain) Mine(txs []*transaction2.Transaction) {
 }
 
 // CreateTransaction 创建交易
-func (bc *Blockchain) CreateTransaction(fromAddress []byte, toAddress []byte, amount int) (*transaction2.Transaction, bool) {
+func (bc *Blockchain) CreateTransaction(fromPubKey, toHashPubKey []byte, amount int, privKey ecdsa.PrivateKey) (*transaction2.Transaction, bool) {
 	var inputs []transaction2.TxInput
 	var outputs []transaction2.TxOutput
+
 	// 根据输入地址找出该地址的未花费输出
-	balance, vaildOutputs := bc.FindSpendableOutputs(fromAddress, amount)
+	balance, validOutputs := bc.FindSpendableOutputs(fromPubKey, amount)
 	if balance < amount {
 		fmt.Println("Not enough coins!")
 		return &transaction2.Transaction{}, false
 	}
 
 	// 根据未花费输出，构建新交易的输入信息
-	for txId, outIdx := range vaildOutputs {
+	for txId, outIdx := range validOutputs {
 		txID, err := hex.DecodeString(txId)
 		utils.Handle(err)
 
-		input := transaction2.TxInput{TxID: txID, OutIdx: outIdx, FromAddress: fromAddress}
+		input := transaction2.TxInput{TxID: txID, OutIdx: outIdx, PubKey: fromPubKey}
 		inputs = append(inputs, input)
 	}
 
 	// 构建输出信息
-	outputs = append(outputs, transaction2.TxOutput{ToAddress: toAddress, Value: amount})
+	outputs = append(outputs, transaction2.TxOutput{HashPubKey: toHashPubKey, Value: amount})
 	// 如果可花费金额超出了amount,需要找零
 	if balance > amount {
-		outputs = append(outputs, transaction2.TxOutput{ToAddress: fromAddress, Value: balance - amount})
+		outputs = append(outputs, transaction2.TxOutput{HashPubKey: utils.PublicKeyHash(fromPubKey), Value: balance - amount})
 	}
 
 	tx := transaction2.Transaction{Inputs: inputs, Outputs: outputs}
 	tx.SetID()
+	tx.Sign(privKey)
 	return &tx, true
 }
 

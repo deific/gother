@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/gob"
 	"gother/chapter6/internal/constant"
@@ -38,8 +39,52 @@ func (tx *Transaction) IsBase() bool {
 
 // BaseTransaction 创世区块的交易，同时也是会记录因为打包成功，产生奖励给矿工的交易
 func BaseTransaction(toAddress []byte) *Transaction {
-	txIn := TxInput{[]byte{}, -1, []byte{}}
+	txIn := TxInput{[]byte{}, -1, []byte{}, nil}
 	txOut := TxOutput{constant.InitCoin, toAddress}
 	tx := Transaction{[]byte("This is the Base Transaction!"), []TxInput{txIn}, []TxOutput{txOut}}
 	return &tx
+}
+
+func (tx *Transaction) PlainCopy() Transaction {
+	var inputs []TxInput
+	var outputs []TxOutput
+
+	for _, txin := range tx.Inputs {
+		inputs = append(inputs, TxInput{txin.TxID, txin.OutIdx, nil, nil})
+	}
+
+	for _, txout := range tx.Outputs {
+		outputs = append(outputs, TxOutput{txout.Value, txout.HashPubKey})
+	}
+
+	txCopy := Transaction{tx.ID, inputs, outputs}
+	return txCopy
+}
+
+func (tx *Transaction) PlainHash(index int, prevPubKey []byte) []byte {
+	txCopy := tx.PlainCopy()
+	txCopy.Inputs[index].PubKey = prevPubKey
+	return txCopy.TxHash()
+}
+
+func (tx *Transaction) Sign(privKey ecdsa.PrivateKey) {
+	if tx.IsBase() {
+		return
+	}
+	for idx, input := range tx.Inputs {
+		// 分别对每一个输入进行签名
+		plainHash := tx.PlainHash(idx, input.PubKey)
+		signature := utils.Sign(plainHash, privKey)
+		tx.Inputs[idx].Sig = signature
+	}
+}
+
+func (tx *Transaction) Verify() bool {
+	for idx, input := range tx.Inputs {
+		plainHash := tx.PlainHash(idx, input.PubKey)
+		if !utils.Verify(plainHash, input.PubKey, input.Sig) {
+			return false
+		}
+	}
+	return true
 }

@@ -1,24 +1,28 @@
 package transaction
 
-import "bytes"
+import (
+	"bytes"
+	"gother/chapter6/internal/utils"
+)
 
 type TxInput struct {
-	TxID        []byte
-	OutIdx      int
-	FromAddress []byte
+	TxID   []byte
+	OutIdx int
+	PubKey []byte
+	Sig    []byte
 }
 
 type TxOutput struct {
-	Value     int
-	ToAddress []byte
+	Value      int
+	HashPubKey []byte // 公钥Hash
 }
 
 // IsFromAddress 判断一个地址是否是输入地址
-func (in *TxInput) IsFromAddress(address []byte) bool {
-	return bytes.Equal(in.FromAddress, address)
+func (in *TxInput) IsFromAddress(pubKey []byte) bool {
+	return bytes.Equal(in.PubKey, pubKey)
 }
 
 // IsToAddress 判断一个地址是否是输出地址
-func (out *TxOutput) IsToAddress(address []byte) bool {
-	return bytes.Equal(out.ToAddress, address)
+func (out *TxOutput) IsToAddress(pubKey []byte) bool {
+	return bytes.Equal(out.HashPubKey, utils.PublicKeyHash(pubKey))
 }

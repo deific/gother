@@ -179,7 +179,7 @@ func (cli *CommandLine) walletsList() {
 }
 
 func (cl *CommandLine) create(address string) {
-	newChain := blockchain.InitBlockChain([]byte(address))
+	newChain := blockchain.InitBlockChain(utils.Address2PubHash([]byte(address)))
 	newChain.Database.Close()
 	fmt.Println("Finished creating blockchain, and the owner is: ", address)
 }
@@ -189,7 +189,9 @@ func (cl *CommandLine) createByRefName(refName string) {
 func (cl *CommandLine) balance(address string) {
 	chain := blockchain.LoadBlockChain()
 	defer chain.Database.Close()
-	balance, _ := chain.FindUTXOs([]byte(address))
+
+	wlt := wallet.LoadWallet(address)
+	balance, _ := chain.FindUTXOs(wlt.PublicKey)
 
 	fmt.Printf("Address: %s, Balance: %d \n", address, balance)
 }
@@ -200,7 +202,9 @@ func (cl *CommandLine) balanceByRefName(refName string) {
 func (cl *CommandLine) send(fromAddress string, toAddress string, amount int) {
 	chain := blockchain.LoadBlockChain()
 	defer chain.Database.Close()
-	tx, ok := chain.CreateTransaction([]byte(fromAddress), []byte(toAddress), amount)
+
+	fromWallet := wallet.LoadWallet(fromAddress)
+	tx, ok := chain.CreateTransaction(fromWallet.PublicKey, utils.Address2PubHash([]byte(toAddress)), amount, fromWallet.PrivateKey)
 	if !ok {
 		fmt.Println("Failed to create transaction")
 		return
