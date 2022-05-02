@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/gob"
 	"gother/chapter7/internal/constant"
+	"gother/chapter7/internal/merkletree"
 	"gother/chapter7/internal/transaction"
 	"gother/chapter7/internal/utils"
 	"time"
@@ -18,6 +19,7 @@ type Block struct {
 	Target       []byte                     // 当前区块目标难度值
 	Nonce        int64                      // 随机数,用于证明该区块是合法区块,该随机数可以获得当前区块的hash值满足目标值
 	Transactions []*transaction.Transaction `json:"transactions"`
+	MTree        *merkletree.MerkleTree
 }
 
 // GetTransactionSummary 获取区块中的交易信息的序列化信息
@@ -63,6 +65,7 @@ func NewBlock(height int64, preHash []byte, transactions []*transaction.Transact
 		Timestamp:    time.Now().Unix(),
 		PreHash:      preHash,
 		Transactions: transactions,
+		MTree:        merkletree.CreateMerkleTree(transactions),
 	}
 	block.Target = block.GetTarget(constant.Difficulty)
 	block.Nonce = block.FindNonce()

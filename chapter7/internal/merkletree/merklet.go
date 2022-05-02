@@ -35,7 +35,7 @@ func CreateMerkleNode(left, right *MerkleNode, data []byte) *MerkleNode {
 	return &tempNode
 }
 
-func CreateMerkleTree(txs []transaction2.Transaction) *MerkleTree {
+func CreateMerkleTree(txs []*transaction2.Transaction) *MerkleTree {
 	txsLen := len(txs)
 	if txsLen%2 != 0 {
 		txs = append(txs, txs[txsLen-1])

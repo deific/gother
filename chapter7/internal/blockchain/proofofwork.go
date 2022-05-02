@@ -26,6 +26,7 @@ func (b *Block) GetDataWithNonce(nonce int64) []byte {
 		utils.ToHexForInt(nonce),
 		b.Target,
 		b.GetTransactionSummary(),
+		b.MTree.RootNode.Data,
 	}, []byte{})
 	return data
 }
