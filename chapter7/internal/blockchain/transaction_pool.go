@@ -25,18 +25,18 @@ func (tp *TransactionPool) SaveFile() {
 	err := encoder.Encode(tp)
 	utils.Handle(err)
 
-	err = ioutil.WriteFile(constant.TransactionPoolFile, content.Bytes(), 0644)
+	err = ioutil.WriteFile(constant.GetNetworkFile(constant.TransactionPoolFile), content.Bytes(), 0644)
 	utils.Handle(err)
 }
 
 func (tp *TransactionPool) LoadFile() error {
-	if !utils.FileExists(constant.TransactionPoolFile) {
+	if !utils.FileExists(constant.GetNetworkFile(constant.TransactionPoolFile)) {
 		return nil
 	}
 
 	var transactionPool TransactionPool
 
-	fileContent, err := ioutil.ReadFile(constant.TransactionPoolFile)
+	fileContent, err := ioutil.ReadFile(constant.GetNetworkFile(constant.TransactionPoolFile))
 	utils.Handle(err)
 
 	decoder := gob.NewDecoder(bytes.NewReader(fileContent))
@@ -57,6 +57,6 @@ func CreateTransactionPool() *TransactionPool {
 }
 
 func ClearTransactionPool() error {
-	err := os.Remove(constant.TransactionPoolFile)
+	err := os.Remove(constant.GetNetworkFile(constant.TransactionPoolFile))
 	return err
 }

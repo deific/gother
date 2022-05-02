@@ -30,9 +30,9 @@ type UTXOItem struct {
 func InitUTXOSet(chain *Blockchain) *UTXOSet {
 	utxoSet := &UTXOSet{chain: chain}
 
-	needReindex := !utils.FileExists(constant.UTXOFile)
+	needReindex := !utils.FileExists(constant.GetNetworkFile(constant.UTXOFile))
 
-	opts := badger.DefaultOptions(constant.UTXOPATH)
+	opts := badger.DefaultOptions(constant.GetNetworkPath(constant.UTXOPATH))
 	opts.Logger = nil
 	db, err := badger.Open(opts)
 	utils.Handle(err)
@@ -71,7 +71,9 @@ func (u *UTXOSet) Reindex() int {
 }
 
 func (u *UTXOSet) save() int {
-	err := u.db.Update(func(txn *badger.Txn) error {
+	err := u.db.DropPrefix([]byte("utxo:"))
+	utils.Handle(err)
+	err = u.db.Update(func(txn *badger.Txn) error {
 		for _, utxo := range u.UTXOS {
 			var content bytes.Buffer
 			encoder := gob.NewEncoder(&content)
@@ -135,7 +137,7 @@ func (u *UTXOSet) spentByTx(txId []byte, pubKey []byte, outIdx int) {
 	var leftUtxoItems []UTXOItem
 	if targetUtxo != nil {
 		for _, item := range targetUtxo.UxtoItems {
-			if item.Txid == string(txId) && item.OutIdx == outIdx {
+			if item.Txid == hex.EncodeToString(txId) && item.OutIdx == outIdx {
 				continue
 			}
 			leftUtxoItems = append(leftUtxoItems, item)

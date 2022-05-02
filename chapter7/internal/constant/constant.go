@@ -1,20 +1,30 @@
 package constant
 
+var Network string = "test"
+
 const (
 	BaseAddress = "Hi,gother"
 	// Difficulty 难度常数
 	Difficulty = 12
-	ROOT       = "/Users/steven/workspace/open-git/gother/chapter7/"
+	BaseDir    = "/Users/steven/workspace/open-git/gother/chapter7/tmp/"
 	// 创始交易值
 	InitCoin            = 1000
 	GenesisPreHash      = "gother!"
-	TransactionPoolFile = ROOT + "./tmp/transaction_pool.data"
-	BCPath              = ROOT + "./tmp/blocks"
-	BCFile              = ROOT + "./tmp/blocks/MANIFEST"
-	UTXOPATH            = ROOT + "./tmp/utxo/"
-	UTXOFile            = ROOT + "./tmp/utxo/MANIFEST"
+	TransactionPoolFile = "/transaction_pool.data"
+	BCPath              = "/blocks"
+	BCFile              = "/blocks/MANIFEST"
+	UTXOPATH            = "/utxo/"
+	UTXOFile            = "/utxo/MANIFEST"
 	CheckSumLength      = 4
 	NetworkVersion      = byte(0x00)
-	Wallets             = ROOT + "./tmp/wallets/"
-	WalletsRefList      = ROOT + "./tmp/ref_list/"
+	Wallets             = "/wallets/"
+	WalletsRefList      = "/ref_list/"
 )
+
+func GetNetworkFile(fileName string) string {
+	return BaseDir + Network + fileName
+}
+
+func GetNetworkPath(path string) string {
+	return BaseDir + Network + path
+}

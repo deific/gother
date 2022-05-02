@@ -15,6 +15,8 @@ import (
 type Blockchain struct {
 	//Blocks   []*Block
 	LastHash []byte
+	network  string
+	UtxoSet  *UTXOSet
 	Database *badger.DB
 }
 
@@ -23,15 +25,15 @@ type BlockchainIterator struct {
 	Database    *badger.DB
 }
 
-func InitBlockChain(address []byte) *Blockchain {
+func CreateBlockChain(address []byte) *Blockchain {
 	var lastHash []byte
 
-	if utils.FileExists(constant.BCFile) {
+	if utils.FileExists(constant.GetNetworkFile(constant.BCFile)) {
 		fmt.Println("blockchain already exists")
 		runtime.Goexit()
 	}
 
-	opts := badger.DefaultOptions(constant.BCPath)
+	opts := badger.DefaultOptions(constant.GetNetworkPath(constant.BCPath))
 	opts.Logger = nil
 
 	db, err := badger.Open(opts)
@@ -54,20 +56,23 @@ func InitBlockChain(address []byte) *Blockchain {
 	})
 	utils.Handle(err)
 
-	blockchain := Blockchain{lastHash, db}
+	blockchain := Blockchain{lastHash, constant.Network, nil, db}
+	utxoSet := InitUTXOSet(&blockchain)
+	blockchain.UtxoSet = utxoSet
+
 	return &blockchain
 }
 
 // LoadBlockChain 加载区块链
 func LoadBlockChain() *Blockchain {
-	if !utils.FileExists(constant.BCFile) {
+	if !utils.FileExists(constant.GetNetworkFile(constant.BCFile)) {
 		fmt.Println("No blockchain found,please create one first")
 		runtime.Goexit()
 	}
 
 	var lastHash []byte
 
-	opts := badger.DefaultOptions(constant.BCPath)
+	opts := badger.DefaultOptions(constant.GetNetworkPath(constant.BCPath))
 	opts.Logger = nil
 
 	db, err := badger.Open(opts)
@@ -86,7 +91,8 @@ func LoadBlockChain() *Blockchain {
 	})
 	utils.Handle(err)
 
-	chain := Blockchain{lastHash, db}
+	chain := Blockchain{lastHash, constant.Network, nil, db}
+	chain.UtxoSet = InitUTXOSet(&chain)
 	return &chain
 }
 
@@ -165,18 +171,19 @@ func (bc *Blockchain) CreateTransaction(fromPubKey, toHashPubKey []byte, amount 
 	var outputs []transaction2.TxOutput
 
 	// 根据输入地址找出该地址的未花费输出
-	balance, validOutputs := bc.FindSpendableOutputs(fromPubKey, amount)
+	balance, validOutputs := bc.UtxoSet.FindSpendableOutputs(fromPubKey, amount)
+	//balance, validOutputs := bc.FindSpendableOutputs(fromPubKey, amount)
 	if balance < amount {
 		fmt.Println("Not enough coins!")
 		return &transaction2.Transaction{}, false
 	}
 
 	// 根据未花费输出，构建新交易的输入信息
-	for txId, outIdx := range validOutputs {
-		txID, err := hex.DecodeString(txId)
+	for _, item := range validOutputs {
+		txID, err := hex.DecodeString(item.Txid)
 		utils.Handle(err)
 
-		input := transaction2.TxInput{TxID: txID, OutIdx: outIdx, PubKey: fromPubKey}
+		input := transaction2.TxInput{TxID: txID, OutIdx: item.OutIdx, PubKey: fromPubKey}
 		inputs = append(inputs, input)
 	}
 

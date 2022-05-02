@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"gother/chapter7/internal/blockchain"
+	"gother/chapter7/internal/constant"
 	"gother/chapter7/internal/utils"
 	"gother/chapter7/internal/wallet"
 	"os"
@@ -87,6 +88,8 @@ func (cl *CommandLine) parseAndRunCmd(subCmdName string, args map[string]string,
 		params[argName] = param
 	}
 
+	testNetwork := subCmd.String("test", "", "")
+
 	err := subCmd.Parse(os.Args[2:])
 	if err != nil {
 		return
@@ -94,6 +97,8 @@ func (cl *CommandLine) parseAndRunCmd(subCmdName string, args map[string]string,
 
 	if subCmd.Parsed() {
 		fmt.Printf("run cmd: %s%v \n", subCmdName, printArgs(params))
+		// 初始化网络
+		cl.initNetWork(testNetwork)
 		runCmd(params)
 		return
 	}
@@ -114,6 +119,7 @@ func (cl *CommandLine) checkArgs() {
 		runtime.Goexit()
 	}
 }
+
 func (cl *CommandLine) printUsage() {
 	fmt.Println("Welcome to Leo Cao's tiny blockchain system, usage is as follows:")
 	fmt.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -133,6 +139,28 @@ func (cl *CommandLine) printUsage() {
 	fmt.Println("sendbyrefname -from NAME1 -to NAME2 -amount AMOUNT  ----> Make a transaction and put it into candidate block using refname.")
 	fmt.Println("mine                                                ----> Mine and add a block to the chain.")
 	fmt.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------")
+}
+
+func (cl *CommandLine) initNetWork(network *string) {
+	if *network == "" {
+		fmt.Printf("not set network,use default network :%s \n", constant.Network)
+	} else {
+		fmt.Printf("use  network :%s \n", *network)
+		constant.Network = *network
+	}
+
+	if !utils.FileExists(constant.GetNetworkPath(constant.BCPath)) {
+		os.Mkdir(constant.GetNetworkPath(constant.BCPath), 0644)
+	}
+	if !utils.FileExists(constant.GetNetworkPath(constant.UTXOPATH)) {
+		os.Mkdir(constant.GetNetworkPath(constant.UTXOPATH), 0644)
+	}
+	if !utils.FileExists(constant.GetNetworkPath(constant.WalletsRefList)) {
+		os.Mkdir(constant.GetNetworkPath(constant.WalletsRefList), 0644)
+	}
+	if !utils.FileExists(constant.GetNetworkPath(constant.Wallets)) {
+		os.Mkdir(constant.GetNetworkPath(constant.Wallets), 0644)
+	}
 }
 
 func (cl *CommandLine) getAddressByRefName(refName string) string {
@@ -183,10 +211,8 @@ func (cli *CommandLine) walletsList() {
 }
 
 func (cl *CommandLine) create(address string) {
-	newChain := blockchain.InitBlockChain(utils.Address2PubHash([]byte(address)))
+	newChain := blockchain.CreateBlockChain(utils.Address2PubHash([]byte(address)))
 	newChain.Database.Close()
-
-	blockchain.InitUTXOSet(newChain)
 
 	fmt.Println("Finished creating blockchain, and the owner is: ", address)
 }
@@ -231,8 +257,7 @@ func (cl *CommandLine) mine() {
 	defer chain.Database.Close()
 	newBlock := chain.RunMine()
 
-	utxoSet := blockchain.InitUTXOSet(chain)
-	utxoSet.Update(newBlock)
+	chain.UtxoSet.Update(newBlock)
 	fmt.Println("Finished mine")
 }
 
@@ -260,10 +285,9 @@ func (cl *CommandLine) info() {
 func (cl *CommandLine) GetUtxos() {
 	chain := blockchain.LoadBlockChain()
 	defer chain.Database.Close()
-	utxoSet := blockchain.InitUTXOSet(chain)
 
 	refList := wallet.LoadRefList()
-	for _, utxo := range utxoSet.UTXOS {
+	for _, utxo := range chain.UtxoSet.UTXOS {
 		refName, _ := refList.FindRefName(utxo.Address)
 		for _, item := range utxo.UxtoItems {
 			fmt.Println("--------------------------------------------------------------------------------------------------------------")

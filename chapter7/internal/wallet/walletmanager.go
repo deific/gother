@@ -15,7 +15,7 @@ import (
 type RefList map[string]string
 
 func (r *RefList) Save() {
-	filename := constant.WalletsRefList + "ref_list.data"
+	filename := constant.GetNetworkPath(constant.WalletsRefList) + "ref_list.data"
 	var content bytes.Buffer
 	encoder := gob.NewEncoder(&content)
 	err := encoder.Encode(r)
@@ -26,7 +26,7 @@ func (r *RefList) Save() {
 
 func (r *RefList) Update() {
 	// 扫描钱包目录下的文件
-	err := filepath.Walk(constant.Wallets, func(path string, f fs.FileInfo, err error) error {
+	err := filepath.Walk(constant.GetNetworkPath(constant.Wallets), func(path string, f fs.FileInfo, err error) error {
 		if f == nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func (r *RefList) FindRefName(address string) (string, error) {
 }
 
 func LoadRefList() *RefList {
-	filename := constant.WalletsRefList + "ref_list.data"
+	filename := constant.GetNetworkPath(constant.WalletsRefList) + "ref_list.data"
 	var refList RefList
 	// 如果文件存在则加载文件
 	if utils.FileExists(filename) {

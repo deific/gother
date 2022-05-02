@@ -28,7 +28,7 @@ func (w *Wallet) Address() []byte {
 }
 
 func (w *Wallet) SaveWallet() {
-	filename := constant.Wallets + string(w.Address()) + ".wlt"
+	filename := constant.GetNetworkPath(constant.Wallets) + string(w.Address()) + ".wlt"
 	var content bytes.Buffer
 	gob.Register(elliptic.P256())
 	encoder := gob.NewEncoder(&content)
@@ -39,7 +39,7 @@ func (w *Wallet) SaveWallet() {
 	utils.Handle(err)
 }
 func LoadWallet(address string) *Wallet {
-	filename := constant.Wallets + address + ".wlt"
+	filename := constant.GetNetworkPath(constant.Wallets) + address + ".wlt"
 	if !utils.FileExists(filename) {
 		utils.Handle(errors.New("no wallet with such address"))
 	}
