@@ -223,6 +223,15 @@ Work:
 	return balance, unSpentOuts
 }
 
+func (bc *Blockchain) GetBalance(address []byte) int {
+	balance := 0
+	utxos := bc.UtxoSet.GetUtxos(string(address))
+	for _, item := range utxos.UxtoItems {
+		balance += item.Value
+	}
+	return balance
+}
+
 // FindUTXOs 查找指定地址的所有未花费交易输出
 func (bc *Blockchain) FindUTXOs(address []byte) (int, map[string]int) {
 	unspentOuts := make(map[string]int)

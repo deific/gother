@@ -51,6 +51,15 @@ func (cl *CommandLine) Run() {
 			cl.balance(*args["address"])
 		}
 	})
+	cl.parseAndRunCmd("balance2", map[string]string{
+		"refname": "Who need to get balance amount",
+		"address": "Who need to get balance amount"}, func(args map[string]*string) {
+		if *args["refname"] != "" {
+			cl.balanceByRefName2(*args["refname"])
+		} else {
+			cl.balance2(*args["address"])
+		}
+	})
 
 	cl.parseAndRunCmd("blockchaininfo", map[string]string{}, func(args map[string]*string) {
 		cl.info()
@@ -219,6 +228,7 @@ func (cl *CommandLine) create(address string) {
 func (cl *CommandLine) createByRefName(refName string) {
 	cl.create(cl.getAddressByRefName(refName))
 }
+
 func (cl *CommandLine) balance(address string) {
 	chain := blockchain.LoadBlockChain()
 	defer chain.Database.Close()
@@ -230,6 +240,19 @@ func (cl *CommandLine) balance(address string) {
 }
 func (cl *CommandLine) balanceByRefName(refName string) {
 	cl.balance(cl.getAddressByRefName(refName))
+}
+
+func (cl *CommandLine) balance2(address string) {
+	chain := blockchain.LoadBlockChain()
+	defer chain.Database.Close()
+
+	wlt := wallet.LoadWallet(address)
+	balance := chain.GetBalance(utils.PubHash2Address(utils.PublicKeyHash(wlt.PublicKey)))
+
+	fmt.Printf("Address: %s, Balance: %d \n", address, balance)
+}
+func (cl *CommandLine) balanceByRefName2(refName string) {
+	cl.balance2(cl.getAddressByRefName(refName))
 }
 
 func (cl *CommandLine) send(fromAddress string, toAddress string, amount int) {

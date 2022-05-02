@@ -1,7 +1,8 @@
-rm -rf ./tmp/*
-mkdir ./tmp/blocks
-mkdir ./tmp/wallets
-mkdir ./tmp/ref_list
+rm -rf ./tmp/test/*
+mkdir ./tmp/test/blocks
+mkdir ./tmp/test/wallets
+mkdir ./tmp/test/ref_list
+mkdir ./tmp/test/utxo
 ./gother createwallet
 ./gother walletslist
 ./gother createwallet -refname Steven
