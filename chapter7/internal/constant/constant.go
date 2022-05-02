@@ -11,7 +11,8 @@ const (
 	TransactionPoolFile = ROOT + "./tmp/transaction_pool.data"
 	BCPath              = ROOT + "./tmp/blocks"
 	BCFile              = ROOT + "./tmp/blocks/MANIFEST"
-	UTXOFile            = ROOT + "./tmp/utxo/"
+	UTXOPATH            = ROOT + "./tmp/utxo/"
+	UTXOFile            = ROOT + "./tmp/utxo/MANIFEST"
 	CheckSumLength      = 4
 	NetworkVersion      = byte(0x00)
 	Wallets             = ROOT + "./tmp/wallets/"

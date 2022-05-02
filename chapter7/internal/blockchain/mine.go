@@ -10,13 +10,13 @@ import (
 )
 
 // RunMine 挖矿
-func (bc *Blockchain) RunMine() {
+func (bc *Blockchain) RunMine() *Block {
 	transactionPool := CreateTransactionPool()
 	if !bc.VerifyTransactions(transactionPool.PubTx) {
 		log.Println("falls in transaction verification")
 		err := ClearTransactionPool()
 		utils.Handle(err)
-		return
+		return nil
 	}
 
 	candidateBlock := NewBlock(1, bc.LastHash, transactionPool.PubTx)
@@ -24,10 +24,10 @@ func (bc *Blockchain) RunMine() {
 		bc.AddBlock(candidateBlock)
 		err := ClearTransactionPool()
 		utils.Handle(err)
-		return
+		return candidateBlock
 	} else {
 		fmt.Println("Block has invalid nonce.")
-		return
+		return nil
 	}
 }
 

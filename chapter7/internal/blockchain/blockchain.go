@@ -122,6 +122,7 @@ func (bc *Blockchain) AddBlock(newBlock *Block) {
 		return err
 	})
 	utils.Handle(err)
+
 }
 
 func (bc *Blockchain) Iterator() *BlockchainIterator {

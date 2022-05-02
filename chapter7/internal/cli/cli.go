@@ -70,7 +70,7 @@ func (cl *CommandLine) Run() {
 		cl.mine()
 	})
 
-	cl.parseAndRunCmd("getUtxos", map[string]string{}, func(args map[string]*string) {
+	cl.parseAndRunCmd("getutxos", map[string]string{}, func(args map[string]*string) {
 		cl.GetUtxos()
 	})
 }
@@ -185,6 +185,9 @@ func (cli *CommandLine) walletsList() {
 func (cl *CommandLine) create(address string) {
 	newChain := blockchain.InitBlockChain(utils.Address2PubHash([]byte(address)))
 	newChain.Database.Close()
+
+	blockchain.InitUTXOSet(newChain)
+
 	fmt.Println("Finished creating blockchain, and the owner is: ", address)
 }
 func (cl *CommandLine) createByRefName(refName string) {
@@ -226,7 +229,10 @@ func (cl *CommandLine) sendByRefName(fromRefName string, toRefName string, amoun
 func (cl *CommandLine) mine() {
 	chain := blockchain.LoadBlockChain()
 	defer chain.Database.Close()
-	chain.RunMine()
+	newBlock := chain.RunMine()
+
+	utxoSet := blockchain.InitUTXOSet(chain)
+	utxoSet.Update(newBlock)
 	fmt.Println("Finished mine")
 }
 
@@ -254,9 +260,10 @@ func (cl *CommandLine) info() {
 func (cl *CommandLine) GetUtxos() {
 	chain := blockchain.LoadBlockChain()
 	defer chain.Database.Close()
-	utxoList := chain.FindAllUTXOs()
+	utxoSet := blockchain.InitUTXOSet(chain)
+
 	refList := wallet.LoadRefList()
-	for _, utxo := range utxoList.UTXOS {
+	for _, utxo := range utxoSet.UTXOS {
 		refName, _ := refList.FindRefName(utxo.Address)
 		for _, item := range utxo.UxtoItems {
 			fmt.Println("--------------------------------------------------------------------------------------------------------------")
