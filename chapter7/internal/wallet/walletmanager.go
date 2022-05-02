@@ -53,11 +53,28 @@ func (r *RefList) BindRef(address string, refName string) {
 	(*r)[address] = refName
 }
 
-func (r *RefList) FindRef(refName string) (string, error) {
+func (r *RefList) FindAddress(refName string) (string, error) {
 	temp := ""
 	for key, val := range *r {
 		if val == refName {
 			temp = key
+			break
+		}
+	}
+
+	// 没找到
+	if temp == "" {
+		err := errors.New("the refName is not found")
+		return temp, err
+	}
+	return temp, nil
+}
+
+func (r *RefList) FindRefName(address string) (string, error) {
+	temp := ""
+	for key, val := range *r {
+		if key == address {
+			temp = val
 			break
 		}
 	}

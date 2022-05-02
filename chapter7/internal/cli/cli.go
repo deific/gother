@@ -69,6 +69,10 @@ func (cl *CommandLine) Run() {
 	cl.parseAndRunCmd("mine", map[string]string{}, func(args map[string]*string) {
 		cl.mine()
 	})
+
+	cl.parseAndRunCmd("getUtxos", map[string]string{}, func(args map[string]*string) {
+		cl.GetUtxos()
+	})
 }
 
 func (cl *CommandLine) parseAndRunCmd(subCmdName string, args map[string]string, runCmd func(args map[string]*string)) {
@@ -133,7 +137,7 @@ func (cl *CommandLine) printUsage() {
 
 func (cl *CommandLine) getAddressByRefName(refName string) string {
 	refList := wallet.LoadRefList()
-	address, err := refList.FindRef(refName)
+	address, err := refList.FindAddress(refName)
 	utils.Handle(err)
 	return address
 }
@@ -245,4 +249,23 @@ func (cl *CommandLine) info() {
 			break
 		}
 	}
+}
+
+func (cl *CommandLine) GetUtxos() {
+	chain := blockchain.LoadBlockChain()
+	defer chain.Database.Close()
+	utxoList := chain.FindAllUTXOs()
+	refList := wallet.LoadRefList()
+	for _, utxo := range utxoList.UTXOS {
+		refName, _ := refList.FindRefName(utxo.Address)
+		for _, item := range utxo.UxtoItems {
+			fmt.Println("--------------------------------------------------------------------------------------------------------------")
+			fmt.Printf("address：%s rename:%s \n", utxo.Address, refName)
+			fmt.Printf("txId:%s \n", item.Txid)
+			fmt.Printf("outIndex:%d\n", item.OutIdx)
+			fmt.Printf("amount:%d\n", item.Value)
+		}
+	}
+	fmt.Println()
+	fmt.Println("Finished getUtxos")
 }
