@@ -73,6 +73,9 @@ func PubHash2Address(pubKeyHash []byte) []byte {
 	address := Base58Encode(finalHash)
 	return address
 }
+func PubKey2Address(pubKey []byte) []byte {
+	return PubHash2Address(PublicKeyHash(pubKey))
+}
 func Address2PubHash(address []byte) []byte {
 	pubKeyHash := Base58Decode(address)
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-constant.CheckSumLength]

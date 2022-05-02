@@ -48,8 +48,8 @@ func InitUTXOSet(chain *Blockchain) *UTXOSet {
 	return utxoSet
 }
 
-func (u UTXOSet) FindSpendableOutputs(pubkeyHash []byte, amount int) (int, []UTXOItem) {
-	addr := string(utils.PubHash2Address(pubkeyHash))
+func (u UTXOSet) FindSpendableOutputs(pubkey []byte, amount int) (int, []UTXOItem) {
+	addr := string(utils.PubKey2Address(pubkey))
 	uxto := u.GetUtxos(addr)
 	var unspentItems []UTXOItem
 
