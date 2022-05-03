@@ -67,15 +67,24 @@ func Base58Decode(input []byte) []byte {
 }
 
 func PubHash2Address(pubKeyHash []byte) []byte {
-	networkVersionedHash := append([]byte{constant.NetworkVersion}, pubKeyHash...)
+	networkVersionedHash := append([]byte{constant.P2PKH_PRIFIX}, pubKeyHash...)
 	checkSum := CheckSum(networkVersionedHash)
 	finalHash := append(networkVersionedHash, checkSum...)
 	address := Base58Encode(finalHash)
 	return address
 }
+func ScriptHash2Address(scriptHash []byte) []byte {
+	networkVersionedHash := append([]byte{constant.P2SH_PRIFIX}, scriptHash[:20]...)
+	checkSum := CheckSum(networkVersionedHash)
+	finalHash := append(networkVersionedHash, checkSum...)
+	address := Base58Encode(finalHash)
+	return address
+}
+
 func PubKey2Address(pubKey []byte) []byte {
 	return PubHash2Address(PublicKeyHash(pubKey))
 }
+
 func Address2PubHash(address []byte) []byte {
 	pubKeyHash := Base58Decode(address)
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-constant.CheckSumLength]
@@ -105,4 +114,14 @@ func Verify(msg []byte, pubKey []byte, signature []byte) bool {
 
 	rawPubKey := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
 	return ecdsa.Verify(&rawPubKey, msg, &r, &s)
+}
+
+func Hash160(data []byte) []byte {
+
+	sha256 := sha256.New()
+	sha256.Write(data)
+	hash := sha256.Sum(data)
+	ripemd160 := ripemd160.New()
+	hash = ripemd160.Sum(hash)
+	return hash
 }

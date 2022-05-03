@@ -16,7 +16,8 @@ const (
 	UTXOPATH            = "/utxo/"
 	UTXOFile            = "/utxo/MANIFEST"
 	CheckSumLength      = 4
-	NetworkVersion      = byte(0x00)
+	P2PKH_PRIFIX        = byte(0x00)
+	P2SH_PRIFIX         = byte(0x05)
 	Wallets             = "/wallets/"
 	WalletsRefList      = "/ref_list/"
 )

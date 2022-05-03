@@ -138,7 +138,7 @@ func (cl *CommandLine) printUsage() {
 	fmt.Println("In addition, don't forget to run mine function after transatcions are collected.")
 	fmt.Println("---------------------------------------------------------------------------------------------------------------------------------------------------------")
 	fmt.Println("createwallet -refname REFNAME                       ----> Creates and save a wallet. The refname is optional.")
-	fmt.Println("walletinfo -refname NAME -address Address           ----> Print the information of a wallet. At least one of the refname and address is required.")
+	fmt.Println("walletinfo -refname NAME -address P2PKHAddress           ----> Print the information of a wallet. At least one of the refname and address is required.")
 	fmt.Println("walletsupdate                                       ----> Registrate and update all the wallets (especially when you have added an existed .wlt file).")
 	fmt.Println("walletslist                                         ----> List all the wallets found (make sure you have run walletsupdate first).")
 	fmt.Println("createblockchain -refname NAME -address ADDRESS     ----> Creates a blockchain with the owner you input (address or refname).")
@@ -182,9 +182,9 @@ func (cl *CommandLine) createWallet(refName string) *wallet.Wallet {
 	newWallet := wallet.NewWallet()
 	newWallet.SaveWallet()
 	refList := wallet.LoadRefList()
-	refList.BindRef(string(newWallet.Address()), refName)
+	refList.BindRef(string(newWallet.P2PKHAddress()), refName)
 	refList.Save()
-	fmt.Printf("Succeed create wallet:%s %s\n", refName, string(newWallet.Address()))
+	fmt.Printf("Succeed create wallet:%s %s\n", refName, string(newWallet.P2PKHAddress()))
 	return newWallet
 }
 
@@ -194,7 +194,7 @@ func (cl *CommandLine) walletInfoByRefName(refName string) {
 func (cli *CommandLine) walletInfo(address string) {
 	wlt := wallet.LoadWallet(address)
 	refList := wallet.LoadRefList()
-	fmt.Printf("Wallet address:%x\n", wlt.Address())
+	fmt.Printf("Wallet address:%x\n", wlt.P2PKHAddress())
 	fmt.Printf("Public Key:%x\n", wlt.PublicKey)
 	fmt.Printf("Reference Name:%s\n", (*refList)[address])
 }
@@ -236,7 +236,7 @@ func (cl *CommandLine) balance(address string) {
 	wlt := wallet.LoadWallet(address)
 	balance, _ := chain.FindUTXOs(wlt.PublicKey)
 
-	fmt.Printf("Address: %s, Balance: %d \n", address, balance)
+	fmt.Printf("P2PKHAddress: %s, Balance: %d \n", address, balance)
 }
 func (cl *CommandLine) balanceByRefName(refName string) {
 	cl.balance(cl.getAddressByRefName(refName))
@@ -249,7 +249,7 @@ func (cl *CommandLine) balance2(address string) {
 	wlt := wallet.LoadWallet(address)
 	balance := chain.GetBalance(utils.PubHash2Address(utils.PublicKeyHash(wlt.PublicKey)))
 
-	fmt.Printf("Address: %s, Balance: %d \n", address, balance)
+	fmt.Printf("P2PKHAddress: %s, Balance: %d \n", address, balance)
 }
 func (cl *CommandLine) balanceByRefName2(refName string) {
 	cl.balance2(cl.getAddressByRefName(refName))

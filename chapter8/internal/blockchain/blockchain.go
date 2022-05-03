@@ -245,7 +245,7 @@ Work:
 			if out.IsToAddress(address) {
 				balance += out.Value
 				unspentOuts[txId] = outIdx
-				continue Work // one transaction can only have one output referred to Address
+				continue Work // one transaction can only have one output referred to P2PKHAddress
 			}
 		}
 	}

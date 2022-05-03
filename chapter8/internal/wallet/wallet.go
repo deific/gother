@@ -6,8 +6,10 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/gob"
+	"encoding/hex"
 	"errors"
 	"gother/chapter8/internal/constant"
+	"gother/chapter8/internal/script"
 	"gother/chapter8/internal/utils"
 	"io/ioutil"
 )
@@ -22,13 +24,32 @@ func NewWallet() *Wallet {
 	return &Wallet{PrivateKey: prvKey, PublicKey: pubKey}
 }
 
-func (w *Wallet) Address() []byte {
+func (w *Wallet) P2PKHAddress() []byte {
 	pubHash := utils.PublicKeyHash(w.PublicKey)
 	return utils.PubHash2Address(pubHash)
 }
 
+func (w *Wallet) P2SHAddress() []byte {
+	reedeemScript, err := script.NewMofNReedeemScript(1, 1, [][]byte{w.PublicKey})
+	utils.Handle(err)
+	scriptHash := utils.Hash160(reedeemScript)
+	return utils.ScriptHash2Address(scriptHash)
+}
+
+func (w *Wallet) MSignAddress(m int, n int, publicKeys []string) ([]byte, []byte) {
+	publicKeyArray := make([][]byte, len(publicKeys))
+	for i, pubKey := range publicKeys {
+		publicKeyArray[i], _ = hex.DecodeString(pubKey)
+	}
+
+	reedeemScript, err := script.NewMofNReedeemScript(m, n, publicKeyArray)
+	utils.Handle(err)
+	scriptHash := utils.Hash160(reedeemScript)
+	return utils.ScriptHash2Address(scriptHash), reedeemScript
+}
+
 func (w *Wallet) SaveWallet() {
-	filename := constant.GetNetworkPath(constant.Wallets) + string(w.Address()) + ".wlt"
+	filename := constant.GetNetworkPath(constant.Wallets) + string(w.P2PKHAddress()) + ".wlt"
 	var content bytes.Buffer
 	gob.Register(elliptic.P256())
 	encoder := gob.NewEncoder(&content)
