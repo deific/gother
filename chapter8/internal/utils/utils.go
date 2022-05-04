@@ -73,7 +73,10 @@ func PubHash2Address(pubKeyHash []byte) []byte {
 	address := Base58Encode(finalHash)
 	return address
 }
+
 func ScriptHash2Address(scriptHash []byte) []byte {
+	// BASE58CHECK( 0x05 HASH160( 0x00 0x14 HASH160( pubKey ) ) )
+	//上面的 HASH160(x) = RIPEMD160(Sha256(x)），base58check(x) = x Sha256(Sha256(x)).substring(0,4)
 	networkVersionedHash := append([]byte{constant.P2SH_PRIFIX}, scriptHash[:20]...)
 	checkSum := CheckSum(networkVersionedHash)
 	finalHash := append(networkVersionedHash, checkSum...)
@@ -116,11 +119,9 @@ func Verify(msg []byte, pubKey []byte, signature []byte) bool {
 	return ecdsa.Verify(&rawPubKey, msg, &r, &s)
 }
 
-func Hash160(data []byte) []byte {
-
+func Hash160(script []byte) []byte {
 	sha256 := sha256.New()
-	sha256.Write(data)
-	hash := sha256.Sum(data)
+	hash := sha256.Sum(script)
 	ripemd160 := ripemd160.New()
 	hash = ripemd160.Sum(hash)
 	return hash
