@@ -161,10 +161,6 @@ func (it *BlockchainIterator) HasNext() bool {
 	return !bytes.Equal(it.CurrentHash, []byte(constant.GenesisPreHash))
 }
 
-// Mine 模拟挖矿
-func (bc *Blockchain) Mine(txs []*transaction2.Transaction) {
-}
-
 // CreateTransaction 创建交易
 func (bc *Blockchain) CreateTransaction(fromPubKey, toHashPubKey []byte, amount int, privKey ecdsa.PrivateKey) (*transaction2.Transaction, bool) {
 	var inputs []transaction2.TxInput
@@ -200,29 +196,6 @@ func (bc *Blockchain) CreateTransaction(fromPubKey, toHashPubKey []byte, amount 
 	return &tx, true
 }
 
-// FindSpendableOutputs 查找目标地址的可花费amount的未花费输出
-func (bc *Blockchain) FindSpendableOutputs(address []byte, amount int) (int, map[string]int) {
-	unSpentOuts := make(map[string]int)
-	unSpentTxs := bc.FindUnspentTx(address)
-	balance := 0
-
-Work:
-	for _, tx := range unSpentTxs {
-		txID := hex.EncodeToString(tx.ID)
-		for outIdx, out := range tx.Outputs {
-			if out.IsToAddress(address) {
-				balance += out.Value
-				unSpentOuts[txID] = outIdx
-				if balance >= amount {
-					break Work
-				}
-			}
-		}
-	}
-
-	return balance, unSpentOuts
-}
-
 func (bc *Blockchain) GetBalance(address []byte) int {
 	balance := 0
 	utxos := bc.UtxoSet.GetUtxos(string(address))
@@ -230,74 +203,4 @@ func (bc *Blockchain) GetBalance(address []byte) int {
 		balance += item.Value
 	}
 	return balance
-}
-
-// FindUTXOs 查找指定地址的所有未花费交易输出
-func (bc *Blockchain) FindUTXOs(address []byte) (int, map[string]int) {
-	unspentOuts := make(map[string]int)
-	unspentTxs := bc.FindUnspentTx(address)
-	balance := 0
-
-Work:
-	for _, tx := range unspentTxs {
-		txId := hex.EncodeToString(tx.ID)
-		for outIdx, out := range tx.Outputs {
-			if out.IsToAddress(address) {
-				balance += out.Value
-				unspentOuts[txId] = outIdx
-				continue Work // one transaction can only have one output referred to P2PKHAddress
-			}
-		}
-	}
-
-	return balance, unspentOuts
-}
-
-// FindUnspentTx 查找所有包含address未花费交易
-func (bc *Blockchain) FindUnspentTx(address []byte) []transaction2.Transaction {
-	var unSpentTx []transaction2.Transaction
-	spentTxs := make(map[string][]int)
-
-	// 循环查找整个区块链，从后向前查找
-	iter := bc.Iterator()
-
-	for {
-		block := iter.Next()
-		// 查找每个区块上的交易
-		for _, tx := range block.Transactions {
-			txID := hex.EncodeToString(tx.ID)
-			// 循环查找交易中的输出有没有作为其他交易的输入被花费掉
-		IterOutputs:
-			for outIndex, out := range tx.Outputs {
-				// 如果当前交易是被花费过的交易，则判断该输出是否已花费交易中使用
-				if spentTxs[txID] != nil {
-					for _, spentOut := range spentTxs[txID] {
-						if spentOut == outIndex {
-							continue IterOutputs
-						}
-					}
-				}
-				if out.IsToAddress(address) {
-					unSpentTx = append(unSpentTx, *tx)
-				}
-			}
-			// 构建已花费map缓存
-			if !tx.IsBase() {
-				// 每个交易的输入就是之前交易的输出，只要某个交易的输出被另一个交易的输入引用了，则认为已被花费
-				for _, in := range tx.Inputs {
-					// 如果某个交易的输入地址是被查找地址，则说明其对应
-					if in.IsFromAddress(address) {
-						inTxId := hex.EncodeToString(in.TxID)
-						spentTxs[inTxId] = append(spentTxs[inTxId], in.OutIdx)
-					}
-				}
-			}
-		}
-
-		if !iter.HasNext() {
-			break
-		}
-	}
-
-	return unSpentTx
 }

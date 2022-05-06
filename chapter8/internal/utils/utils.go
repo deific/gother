@@ -13,6 +13,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"runtime"
 )
 
 func ToHexForInt(input int64) []byte {
@@ -125,4 +126,8 @@ func Hash160(script []byte) []byte {
 	ripemd160 := ripemd160.New()
 	hash = ripemd160.Sum(hash)
 	return hash
+}
+
+func Hashaa() {
+	runtime.Stack([]byte{}, false)
 }
