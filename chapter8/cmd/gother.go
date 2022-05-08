@@ -2,6 +2,7 @@ package main
 
 import (
 	"gother/chapter8/internal/cli"
+	"gother/chapter8/internal/console"
 	"os"
 )
 
@@ -11,6 +12,9 @@ func main() {
 
 func startCli() {
 	defer os.Exit(0)
-	cmd := cli.CommandLine{}
-	cmd.Run()
+	cli := cli.CommandLine{}
+	//cli.Run()
+
+	console := console.Console{Cli: &cli}
+	console.Start()
 }

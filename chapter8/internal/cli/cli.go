@@ -62,7 +62,7 @@ func (cl *CommandLine) Run() {
 	})
 
 	cl.parseAndRunCmd("blockchaininfo", map[string]string{}, func(args map[string]*string) {
-		cl.info()
+		cl.Info()
 	})
 
 	cl.parseAndRunCmd("send", map[string]string{"from": "Source address", "to": "Destination address", "amount": "Amount to send"}, func(args map[string]*string) {
@@ -283,7 +283,7 @@ func (cl *CommandLine) mine() {
 	fmt.Println("Finished mine")
 }
 
-func (cl *CommandLine) info() {
+func (cl *CommandLine) Info() {
 	chain := blockchain.LoadBlockChain()
 	defer chain.Database.Close()
 
