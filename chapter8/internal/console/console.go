@@ -2,7 +2,6 @@ package console
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"gother/chapter8/internal/cli"
 	"os"
@@ -27,41 +26,6 @@ func (c *Console) Start() {
 			continue
 		}
 		args := strings.Split(string(input), " ")
-		c.parseAndRunCmd("blockchaininfo", map[string]string{}, args, func(args map[string]*string) {
-			c.Cli.Info()
-		})
+		c.Cli.Run(args)
 	}
-}
-
-func (cl *Console) parseAndRunCmd(subCmdName string, argNames map[string]string, args []string, runCmd func(args map[string]*string)) {
-	if subCmdName != args[0] {
-		return
-	}
-
-	subCmd := flag.NewFlagSet(subCmdName, flag.ContinueOnError)
-	var params = make(map[string]*string)
-	for argName, argUsage := range argNames {
-		param := subCmd.String(argName, "", argUsage)
-		params[argName] = param
-	}
-
-	err := subCmd.Parse(args[1:])
-	if err != nil {
-		return
-	}
-
-	if subCmd.Parsed() {
-		fmt.Printf("run cmd: %s%v \n", subCmdName, printArgs(params))
-		runCmd(params)
-		return
-	}
-	fmt.Printf("run cmd %s error\n", subCmdName)
-}
-
-func printArgs(args map[string]*string) string {
-	var argValues string
-	for key, value := range args {
-		argValues = argValues + " -" + key + " " + *value
-	}
-	return argValues
 }

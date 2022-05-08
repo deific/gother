@@ -13,8 +13,12 @@ func main() {
 func startCli() {
 	defer os.Exit(0)
 	cli := cli.CommandLine{}
-	//cli.Run()
 
-	console := console.Console{Cli: &cli}
-	console.Start()
+	if len(os.Args) > 1 {
+		cli.Run(os.Args[1:])
+	} else {
+		console := console.Console{Cli: &cli}
+		console.Start()
+	}
+
 }

@@ -15,26 +15,26 @@ import (
 type CommandLine struct {
 }
 
-func (cl *CommandLine) Run() {
-	cl.checkArgs()
+func (cl *CommandLine) Run(args []string) {
+	cl.CheckArgs(args)
 
-	cl.parseAndRunCmd("createwallet", map[string]string{"refname": "The refname of the wallet, and this is optimal"}, func(args map[string]*string) {
+	cl.parseAndRunCmd("createwallet", map[string]string{"refname": "The refname of the wallet, and this is optimal"}, args, func(args map[string]*string) {
 		cl.createWallet(*args["refname"])
 	})
-	cl.parseAndRunCmd("walletinfo", map[string]string{"refname": "The refname of the wallet", "address": "The address of the wallet"}, func(args map[string]*string) {
+	cl.parseAndRunCmd("walletinfo", map[string]string{"refname": "The refname of the wallet", "address": "The address of the wallet"}, args, func(args map[string]*string) {
 		if *args["refname"] != "" {
 			cl.walletInfoByRefName(*args["refname"])
 		} else {
 			cl.walletInfo(*args["address"])
 		}
 	})
-	cl.parseAndRunCmd("walletslist", map[string]string{}, func(args map[string]*string) {
+	cl.parseAndRunCmd("walletslist", map[string]string{}, args, func(args map[string]*string) {
 		cl.walletsList()
 	})
 
 	cl.parseAndRunCmd("createblockchain", map[string]string{
 		"refname": "The refname refer to the owner of blockchain",
-		"address": "The address refer to the owner of blockchain"}, func(args map[string]*string) {
+		"address": "The address refer to the owner of blockchain"}, args, func(args map[string]*string) {
 		if *args["refname"] != "" {
 			cl.createByRefName(*args["refname"])
 		} else {
@@ -44,7 +44,7 @@ func (cl *CommandLine) Run() {
 
 	cl.parseAndRunCmd("balance", map[string]string{
 		"refname": "Who need to get balance amount",
-		"address": "Who need to get balance amount"}, func(args map[string]*string) {
+		"address": "Who need to get balance amount"}, args, func(args map[string]*string) {
 		if *args["refname"] != "" {
 			cl.balanceByRefName(*args["refname"])
 		} else {
@@ -53,7 +53,7 @@ func (cl *CommandLine) Run() {
 	})
 	cl.parseAndRunCmd("balance2", map[string]string{
 		"refname": "Who need to get balance amount",
-		"address": "Who need to get balance amount"}, func(args map[string]*string) {
+		"address": "Who need to get balance amount"}, args, func(args map[string]*string) {
 		if *args["refname"] != "" {
 			cl.balanceByRefName2(*args["refname"])
 		} else {
@@ -61,45 +61,45 @@ func (cl *CommandLine) Run() {
 		}
 	})
 
-	cl.parseAndRunCmd("blockchaininfo", map[string]string{}, func(args map[string]*string) {
+	cl.parseAndRunCmd("blockchaininfo", map[string]string{}, args, func(args map[string]*string) {
 		cl.Info()
 	})
 
-	cl.parseAndRunCmd("send", map[string]string{"from": "Source address", "to": "Destination address", "amount": "Amount to send"}, func(args map[string]*string) {
+	cl.parseAndRunCmd("send", map[string]string{"from": "Source address", "to": "Destination address", "amount": "Amount to send"}, args, func(args map[string]*string) {
 		amount, err := strconv.Atoi(*args["amount"])
 		utils.Handle(err)
 		cl.send(*args["from"], *args["to"], amount)
 	})
-	cl.parseAndRunCmd("sendbyrefname", map[string]string{"from": "Source address", "to": "Destination address", "amount": "Amount to send"}, func(args map[string]*string) {
+	cl.parseAndRunCmd("sendbyrefname", map[string]string{"from": "Source address", "to": "Destination address", "amount": "Amount to send"}, args, func(args map[string]*string) {
 		amount, err := strconv.Atoi(*args["amount"])
 		utils.Handle(err)
 		cl.send(cl.getAddressByRefName(*args["from"]), cl.getAddressByRefName(*args["to"]), amount)
 	})
 
-	cl.parseAndRunCmd("mine", map[string]string{}, func(args map[string]*string) {
+	cl.parseAndRunCmd("mine", map[string]string{}, args, func(args map[string]*string) {
 		cl.mine()
 	})
 
-	cl.parseAndRunCmd("getutxos", map[string]string{}, func(args map[string]*string) {
+	cl.parseAndRunCmd("getutxos", map[string]string{}, args, func(args map[string]*string) {
 		cl.GetUtxos()
 	})
 }
 
-func (cl *CommandLine) parseAndRunCmd(subCmdName string, args map[string]string, runCmd func(args map[string]*string)) {
-	if subCmdName != os.Args[1] {
+func (cl *CommandLine) parseAndRunCmd(subCmdName string, argUsages map[string]string, args []string, runCmd func(args map[string]*string)) {
+	if subCmdName != args[0] {
 		return
 	}
 
 	subCmd := flag.NewFlagSet(subCmdName, flag.ContinueOnError)
 	var params = make(map[string]*string)
-	for argName, argUsage := range args {
+	for argName, argUsage := range argUsages {
 		param := subCmd.String(argName, "", argUsage)
 		params[argName] = param
 	}
 
 	testNetwork := subCmd.String("test", "", "")
 
-	err := subCmd.Parse(os.Args[2:])
+	err := subCmd.Parse(args[1:])
 	if err != nil {
 		return
 	}
@@ -122,8 +122,8 @@ func printArgs(args map[string]*string) string {
 	return argValues
 }
 
-func (cl *CommandLine) checkArgs() {
-	if len(os.Args) < 2 {
+func (cl *CommandLine) CheckArgs(args []string) {
+	if len(args) < 1 {
 		cl.printUsage()
 		runtime.Goexit()
 	}
