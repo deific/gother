@@ -248,3 +248,11 @@ func (u *UTXOSet) PrintUtxo(address string) {
 		}
 	}
 }
+
+func (u *UTXO) GetBalance() int {
+	var balance int
+	for _, item := range u.UxtoItems {
+		balance += item.Value
+	}
+	return balance
+}

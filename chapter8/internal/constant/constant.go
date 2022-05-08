@@ -6,7 +6,7 @@ const (
 	BaseAddress = "Hi,gother"
 	// Difficulty 难度常数
 	Difficulty = 12
-	BaseDir    = "/Users/steven/workspace/open-git/gother/chapter7/tmp/"
+	BaseDir    = "./tmp/"
 	// 创始交易值
 	InitCoin            = 1000
 	GenesisPreHash      = "gother!"

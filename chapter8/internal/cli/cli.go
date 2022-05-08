@@ -48,7 +48,7 @@ func (cl *CommandLine) Run() {
 		if *args["refname"] != "" {
 			cl.balanceByRefName(*args["refname"])
 		} else {
-			cl.balance(*args["address"])
+			cl.Balance(*args["address"])
 		}
 	})
 	cl.parseAndRunCmd("balance2", map[string]string{
@@ -229,17 +229,16 @@ func (cl *CommandLine) createByRefName(refName string) {
 	cl.create(cl.getAddressByRefName(refName))
 }
 
-func (cl *CommandLine) balance(address string) {
+func (cl *CommandLine) Balance(address string) {
 	chain := blockchain.LoadBlockChain()
 	defer chain.Database.Close()
 
-	wlt := wallet.LoadWallet(address)
-	balance, _ := chain.FindUTXOs(wlt.PublicKey)
+	utxo := chain.UtxoSet.GetUtxos(address)
 
-	fmt.Printf("P2PKHAddress: %s, Balance: %d \n", address, balance)
+	fmt.Printf("P2PKHAddress: %s, Balance: %d \n", address, utxo.GetBalance())
 }
 func (cl *CommandLine) balanceByRefName(refName string) {
-	cl.balance(cl.getAddressByRefName(refName))
+	cl.Balance(cl.getAddressByRefName(refName))
 }
 
 func (cl *CommandLine) balance2(address string) {

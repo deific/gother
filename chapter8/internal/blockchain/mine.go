@@ -40,7 +40,8 @@ func (bc *Blockchain) VerifyTransactions(txs []*transaction2.Transaction) bool {
 	spentOutputs := make(map[string]int)
 	for _, tx := range txs {
 		pubKey := tx.Inputs[0].PubKey
-		unspentOutputs := bc.FindUnspentTx(pubKey)
+		addr := utils.PubKey2Address(pubKey)
+		unspentOutputs := bc.UtxoSet.GetUtxos(string(addr))
 		inputAmount := 0
 		outputAmount := 0
 
@@ -72,10 +73,11 @@ func (bc *Blockchain) VerifyTransactions(txs []*transaction2.Transaction) bool {
 	return true
 }
 
-func isInputRight(txs []transaction2.Transaction, in transaction2.TxInput) (bool, int) {
-	for _, tx := range txs {
-		if bytes.Equal(tx.ID, in.TxID) {
-			return true, tx.Outputs[in.OutIdx].Value
+func isInputRight(utxos *UTXO, in transaction2.TxInput) (bool, int) {
+	txId := hex.EncodeToString(in.TxID)
+	for _, item := range utxos.UxtoItems {
+		if bytes.Equal([]byte(item.Txid), []byte(txId)) {
+			return true, item.Value
 		}
 	}
 	return false, 0
