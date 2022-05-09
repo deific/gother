@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"gother/chapter8/internal/cli"
 	"gother/chapter8/internal/console"
 	"os"
@@ -12,13 +13,16 @@ func main() {
 
 func startCli() {
 	defer os.Exit(0)
-	cli := cli.CommandLine{}
 
-	if len(os.Args) > 1 {
-		cli.Run(os.Args[1:])
+	cli := cli.New()
+	defer cli.Close()
+
+	c := flag.Bool("console", false, "console")
+	flag.Parse()
+	if *c {
+		console := console.Console{}
+		console.Start(cli)
 	} else {
-		console := console.Console{Cli: &cli}
-		console.Start()
+		cli.Run(os.Args[1:])
 	}
-
 }

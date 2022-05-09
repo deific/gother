@@ -13,10 +13,24 @@ import (
 )
 
 type CommandLine struct {
+	chain *blockchain.Blockchain
+}
+
+func New() *CommandLine {
+	chain := blockchain.LoadBlockChain()
+	return &CommandLine{chain: chain}
+}
+
+func (cl *CommandLine) Close() {
+	cl.chain.Database.Close()
 }
 
 func (cl *CommandLine) Run(args []string) {
 	cl.CheckArgs(args)
+
+	cl.parseAndRunCmd("help", map[string]string{}, args, func(args map[string]*string) {
+		cl.printUsage()
+	})
 
 	cl.parseAndRunCmd("createwallet", map[string]string{"refname": "The refname of the wallet, and this is optimal"}, args, func(args map[string]*string) {
 		cl.createWallet(*args["refname"])
@@ -230,10 +244,7 @@ func (cl *CommandLine) createByRefName(refName string) {
 }
 
 func (cl *CommandLine) Balance(address string) {
-	chain := blockchain.LoadBlockChain()
-	defer chain.Database.Close()
-
-	utxo := chain.UtxoSet.GetUtxos(address)
+	utxo := cl.chain.UtxoSet.GetUtxos(address)
 
 	fmt.Printf("P2PKHAddress: %s, Balance: %d \n", address, utxo.GetBalance())
 }
@@ -242,11 +253,8 @@ func (cl *CommandLine) balanceByRefName(refName string) {
 }
 
 func (cl *CommandLine) balance2(address string) {
-	chain := blockchain.LoadBlockChain()
-	defer chain.Database.Close()
-
 	wlt := wallet.LoadWallet(address)
-	balance := chain.GetBalance(utils.PubHash2Address(utils.PublicKeyHash(wlt.PublicKey)))
+	balance := cl.chain.GetBalance(utils.PubHash2Address(utils.PublicKeyHash(wlt.PublicKey)))
 
 	fmt.Printf("P2PKHAddress: %s, Balance: %d \n", address, balance)
 }
@@ -255,11 +263,8 @@ func (cl *CommandLine) balanceByRefName2(refName string) {
 }
 
 func (cl *CommandLine) send(fromAddress string, toAddress string, amount int) {
-	chain := blockchain.LoadBlockChain()
-	defer chain.Database.Close()
-
 	fromWallet := wallet.LoadWallet(fromAddress)
-	tx, ok := chain.CreateTransaction(fromWallet.PublicKey, utils.Address2PubHash([]byte(toAddress)), amount, fromWallet.PrivateKey)
+	tx, ok := cl.chain.CreateTransaction(fromWallet.PublicKey, utils.Address2PubHash([]byte(toAddress)), amount, fromWallet.PrivateKey)
 	if !ok {
 		fmt.Println("Failed to create transaction")
 		return
@@ -275,19 +280,15 @@ func (cl *CommandLine) sendByRefName(fromRefName string, toRefName string, amoun
 }
 
 func (cl *CommandLine) mine() {
-	chain := blockchain.LoadBlockChain()
-	defer chain.Database.Close()
-	newBlock := chain.RunMine()
+	newBlock := cl.chain.RunMine()
 
-	chain.UtxoSet.Update(newBlock)
+	cl.chain.UtxoSet.Update(newBlock)
 	fmt.Println("Finished mine")
 }
 
 func (cl *CommandLine) Info() {
-	chain := blockchain.LoadBlockChain()
-	defer chain.Database.Close()
 
-	iter := chain.Iterator()
+	iter := cl.chain.Iterator()
 	for {
 		block := iter.Next()
 		fmt.Println("--------------------------------------------------------------------------------------------------------------")

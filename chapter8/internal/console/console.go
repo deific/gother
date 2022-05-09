@@ -9,7 +9,6 @@ import (
 )
 
 type Console struct {
-	Cli *cli.CommandLine
 }
 
 const prompt = "gother > "
@@ -17,7 +16,7 @@ const (
 	cmd_balance = "balance"
 )
 
-func (c *Console) Start() {
+func (c *Console) Start(cli *cli.CommandLine) {
 	in := bufio.NewReader(os.Stdin) // 声明并初始化读取器
 	for {
 		fmt.Printf(prompt)
@@ -26,6 +25,6 @@ func (c *Console) Start() {
 			continue
 		}
 		args := strings.Split(string(input), " ")
-		c.Cli.Run(args)
+		cli.Run(args)
 	}
 }

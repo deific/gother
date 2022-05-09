@@ -67,7 +67,7 @@ func CreateBlockChain(address []byte) *Blockchain {
 func LoadBlockChain() *Blockchain {
 	if !utils.FileExists(constant.GetNetworkFile(constant.BCFile)) {
 		fmt.Println("No blockchain found,please create one first")
-		runtime.Goexit()
+		return nil
 	}
 
 	var lastHash []byte
@@ -115,7 +115,8 @@ func (bc *Blockchain) AddBlock(newBlock *Block) {
 	// 判断引用关系
 	if !bytes.Equal(newBlock.PreHash, lastHash) {
 		fmt.Println("This block is out of age")
-		runtime.Goexit()
+		return
+		//runtime.Goexit()
 	}
 
 	// 保存新区块
