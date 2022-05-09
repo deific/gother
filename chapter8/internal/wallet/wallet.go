@@ -59,10 +59,11 @@ func (w *Wallet) SaveWallet() {
 	err = ioutil.WriteFile(filename, content.Bytes(), 0644)
 	utils.Handle(err)
 }
-func LoadWallet(address string) *Wallet {
+
+func LoadWallet(address string) (*Wallet, error) {
 	filename := constant.GetNetworkPath(constant.Wallets) + address + ".wlt"
 	if !utils.FileExists(filename) {
-		utils.Handle(errors.New("no wallet with such address"))
+		return nil, errors.New("no wallet with such address")
 	}
 	var w Wallet
 	gob.Register(elliptic.P256())
@@ -72,7 +73,7 @@ func LoadWallet(address string) *Wallet {
 	decoder := gob.NewDecoder(bytes.NewReader(fileContent))
 	err = decoder.Decode(&w)
 	utils.Handle(err)
-	return &w
+	return &w, nil
 }
 
 // NewPairKey 创建椭圆曲线秘钥对的生成函数

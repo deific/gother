@@ -24,7 +24,7 @@ func (r *RefList) Save() {
 	utils.Handle(err)
 }
 
-func (r *RefList) Update() {
+func (r *RefList) ScanWallets() {
 	// 扫描钱包目录下的文件
 	err := filepath.Walk(constant.GetNetworkPath(constant.Wallets), func(path string, f fs.FileInfo, err error) error {
 		if f == nil {
@@ -89,7 +89,7 @@ func (r *RefList) FindRefName(address string) (string, error) {
 
 func LoadRefList() *RefList {
 	filename := constant.GetNetworkPath(constant.WalletsRefList) + "ref_list.data"
-	var refList RefList
+	var refList *RefList
 	// 如果文件存在则加载文件
 	if utils.FileExists(filename) {
 		fileContent, err := ioutil.ReadFile(filename)
@@ -99,8 +99,13 @@ func LoadRefList() *RefList {
 		utils.Handle(err)
 	} else {
 		// 如果不存在在则扫描钱包文件并加载
-		refList = make(RefList)
-		refList.Update()
+		refList = RefreshRefList()
 	}
+	return refList
+}
+
+func RefreshRefList() *RefList {
+	var refList RefList = make(RefList)
+	refList.ScanWallets()
 	return &refList
 }

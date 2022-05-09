@@ -119,13 +119,11 @@ func (cl *CommandLine) parseAndRunCmd(subCmdName string, argUsages map[string]st
 	}
 
 	if subCmd.Parsed() {
-		fmt.Printf("run cmd: %s%v \n", subCmdName, printArgs(params))
 		// 初始化网络
 		cl.initNetWork(testNetwork)
 		runCmd(params)
 		return
 	}
-	fmt.Printf("run cmd %s error\n", subCmdName)
 }
 
 func printArgs(args map[string]*string) string {
@@ -206,7 +204,8 @@ func (cl *CommandLine) walletInfoByRefName(refName string) {
 	cl.walletInfo(cl.getAddressByRefName(refName))
 }
 func (cli *CommandLine) walletInfo(address string) {
-	wlt := wallet.LoadWallet(address)
+	wlt, err := wallet.LoadWallet(address)
+	utils.Handle(err)
 	refList := wallet.LoadRefList()
 	fmt.Printf("Wallet address:%x\n", wlt.P2PKHAddress())
 	fmt.Printf("Public Key:%x\n", wlt.PublicKey)
@@ -214,8 +213,7 @@ func (cli *CommandLine) walletInfo(address string) {
 }
 
 func (cli *CommandLine) walletsUpdate() {
-	refList := wallet.LoadRefList()
-	refList.Update()
+	refList := wallet.RefreshRefList()
 	refList.Save()
 	fmt.Println("Succeed in updating wallets.")
 }
@@ -223,7 +221,8 @@ func (cli *CommandLine) walletsUpdate() {
 func (cli *CommandLine) walletsList() {
 	refList := wallet.LoadRefList()
 	for address, _ := range *refList {
-		wlt := wallet.LoadWallet(address)
+		wlt, err := wallet.LoadWallet(address)
+		utils.Handle(err)
 		fmt.Println("--------------------------------------------------------------------------------------------------------------")
 		fmt.Printf("Wallet address:%s\n", address)
 		fmt.Printf("Public Key:%x\n", wlt.PublicKey)
@@ -253,7 +252,8 @@ func (cl *CommandLine) balanceByRefName(refName string) {
 }
 
 func (cl *CommandLine) balance2(address string) {
-	wlt := wallet.LoadWallet(address)
+	wlt, err := wallet.LoadWallet(address)
+	utils.Handle(err)
 	balance := cl.chain.GetBalance(utils.PubHash2Address(utils.PublicKeyHash(wlt.PublicKey)))
 
 	fmt.Printf("P2PKHAddress: %s, Balance: %d \n", address, balance)
@@ -263,7 +263,9 @@ func (cl *CommandLine) balanceByRefName2(refName string) {
 }
 
 func (cl *CommandLine) send(fromAddress string, toAddress string, amount int) {
-	fromWallet := wallet.LoadWallet(fromAddress)
+	fromWallet, err := wallet.LoadWallet(fromAddress)
+	utils.Handle(err)
+
 	tx, ok := cl.chain.CreateTransaction(fromWallet.PublicKey, utils.Address2PubHash([]byte(toAddress)), amount, fromWallet.PrivateKey)
 	if !ok {
 		fmt.Println("Failed to create transaction")
