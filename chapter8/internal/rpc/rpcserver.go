@@ -8,7 +8,7 @@ import (
 
 func StartServer() {
 	// 注册服务
-	rpc.Register(JsonRpcService{})
+	rpc.Register(&JsonRpcService{})
 	rpc.HandleHTTP()
 
 	addr := ":8333"

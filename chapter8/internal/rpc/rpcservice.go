@@ -9,23 +9,23 @@ import (
 type JsonRpcService struct {
 }
 
-type walletInfoReq struct {
-	address string
+type WalletInfoReq struct {
+	Address string
 }
-type walletInfoRes struct {
-	address string
-	pubKey  string
-	refName string
+type WalletInfoRes struct {
+	Address string
+	PubKey  string
+	RefName string
 }
 
-func (s *JsonRpcService) WalletInfo(req *walletInfoReq, res *walletInfoRes) error {
-	wlt, err := wallet.LoadWallet(req.address)
+func (s *JsonRpcService) WalletInfo(req *WalletInfoReq, res *WalletInfoRes) error {
+	wlt, err := wallet.LoadWallet(req.Address)
 	utils.Handle(err)
 	refList := wallet.LoadRefList()
 
-	res.address = req.address
-	res.pubKey = hex.EncodeToString(wlt.PublicKey)
-	res.refName, _ = refList.FindRefName(req.address)
+	res.Address = req.Address
+	res.PubKey = hex.EncodeToString(wlt.PublicKey)
+	res.RefName, _ = refList.FindRefName(req.Address)
 
 	return nil
 }
