@@ -18,7 +18,7 @@ type walletInfoRes struct {
 	refName string
 }
 
-func (cli *JsonRpcService) walletInfo(req *walletInfoReq, res *walletInfoRes) error {
+func (s *JsonRpcService) WalletInfo(req *walletInfoReq, res *walletInfoRes) error {
 	wlt, err := wallet.LoadWallet(req.address)
 	utils.Handle(err)
 	refList := wallet.LoadRefList()
