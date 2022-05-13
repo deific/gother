@@ -19,16 +19,4 @@ func StartServer() {
 		panic(err)
 	}
 	fmt.Println("rpc started listen by: " + addr)
-	//
-	//for {
-	//	// 不断连接服务
-	//	conn, err := listener.Accept()
-	//	if err != nil {
-	//		log.Printf("accept error, %v", err)
-	//		continue
-	//	}
-	//	fmt.Println("new client accept")
-	//	// 使用 Goroutine：ServeConn runs the JSON-RPC server on a single connection.
-	//	go jsonrpc.ServeConn(conn)
-	//}
 }
