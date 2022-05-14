@@ -6,6 +6,10 @@ import (
 	"gother/chapter8/internal/wallet"
 )
 
+type RpcService struct {
+	server *Server
+}
+
 type JsonRpcService struct {
 }
 
