@@ -39,7 +39,7 @@ func (cl *CommandLine) Run(args []string) {
 		if *args["refname"] != "" {
 			cl.walletInfoByRefName(*args["refname"])
 		} else {
-			cl.walletInfo(*args["address"])
+			cl.WalletInfo(*args["address"])
 		}
 	})
 	cl.parseAndRunCmd("walletslist", map[string]string{}, args, func(args map[string]*string) {
@@ -201,9 +201,9 @@ func (cl *CommandLine) createWallet(refName string) *wallet.Wallet {
 }
 
 func (cl *CommandLine) walletInfoByRefName(refName string) {
-	cl.walletInfo(cl.getAddressByRefName(refName))
+	cl.WalletInfo(cl.getAddressByRefName(refName))
 }
-func (cli *CommandLine) walletInfo(address string) {
+func (cli *CommandLine) WalletInfo(address string) {
 	wlt, err := wallet.LoadWallet(address)
 	utils.Handle(err)
 	refList := wallet.LoadRefList()
